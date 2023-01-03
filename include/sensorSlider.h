@@ -15,8 +15,8 @@
  *   limitations under the License.
  */
 
-#ifndef deviceBattery_h
-#define deviceBattery_h
+#ifndef sensorSlider_h
+#define sensorSlider_h
 
 #include <Arduino.h>
 #include "Pins.h"
@@ -25,37 +25,32 @@
 #include "Transient.h"
 #include "State.h"
 
-#include "LC709203F.h"
-#include "Wire.h"
-
-LC709203F deviceBattery;
-
-void DeviceBatteryReadState()
+void SensorSliderReadState()
 {
-    State.Battery.Alarm = digitalRead(BatteryLowAlarmPin);
-    State.Battery.Percent = deviceBattery.cellStateOfCharge() / 100.0;
-    State.Battery.Voltage = deviceBattery.cellVoltage_mV() / 1000.0;
+    State.Slider.Raw = analogRead(SliderPin);
+    State.Slider.OldPosition = State.Slider.Position;
+    State.Slider.Position = (((float)State.Slider.Raw) - Settings.Slider.Min) / (Settings.Slider.Max - Settings.Slider.Min);
+}
+// Startup is called when powered up / wakes up from hybernation
+void SensorSliderStartup()
+{
+    //SensorSliderReadState();
 }
 
-void DeviceBatteryStartup()
+// Wakeup is called when wakes from deepsleep
+void SensorSliderWakeup()
 {
-    deviceBattery.begin();
-    deviceBattery.setCellCapacity(LC709203F_APA_1000MAH);
-    deviceBattery.setCellProfile(LC709203_NOM3p7_Charge4p2);
-    deviceBattery.setAlarmVoltage(3.4);
+    //SensorSliderReadState();
 }
 
-void DeviceBatteryWakeup()
+// Update is called in a loop
+void SensorSliderUpdate()
 {
-    Wire.begin();
+    SensorSliderReadState();
 }
 
-void DeviceBatteryUpdate()
-{
-    DeviceBatteryReadState();
-}
-
-void DeviceBatteryShutdown()
+// Shutdown is called before Sleep
+void SensorSliderShutdown()
 {
 }
 

@@ -15,8 +15,8 @@
  *   limitations under the License.
  */
 
-#ifndef deviceButtons_h
-#define deviceButtons_h
+#ifndef sensorButtons_h
+#define sensorButtons_h
 
 #include <Arduino.h>
 #include "Pins.h"
@@ -27,47 +27,47 @@
 
 volatile StateButtons ButtonsInteruptState;
 
-void IRAM_ATTR DeviceButtonsButton1Interrupt()
+void IRAM_ATTR SensorButtonsButton1Interrupt()
 {
     ButtonsInteruptState.Button1 = true;
 }
-void IRAM_ATTR DeviceButtonsButton2Interrupt()
+void IRAM_ATTR SensorButtonsButton2Interrupt()
 {
     ButtonsInteruptState.Button2 = true;
 }
-void IRAM_ATTR DeviceButtonsButton3Interrupt()
+void IRAM_ATTR SensorButtonsButton3Interrupt()
 {
     ButtonsInteruptState.Button3 = true;
 }
-void IRAM_ATTR DeviceButtonsButton4Interrupt()
+void IRAM_ATTR SensorButtonsButton4Interrupt()
 {
     ButtonsInteruptState.Button4 = true;
 }
-void IRAM_ATTR DeviceButtonsButton5Interrupt()
+void IRAM_ATTR SensorButtonsButton5Interrupt()
 {
     ButtonsInteruptState.Button5 = true;
 }
-void IRAM_ATTR DeviceButtonsButton6Interrupt()
+void IRAM_ATTR SensorButtonsButton6Interrupt()
 {
     ButtonsInteruptState.Button6 = true;
 }
-void IRAM_ATTR DeviceButtonsButton7Interrupt()
+void IRAM_ATTR SensorButtonsButton7Interrupt()
 {
     ButtonsInteruptState.Button7 = true;
 }
 
-void DeviceButtonsStartup()
+void SensorButtonsStartup()
 {
-    attachInterrupt(Button1Pin, DeviceButtonsButton1Interrupt, RISING);
-    attachInterrupt(Button2Pin, DeviceButtonsButton2Interrupt, RISING);
-    attachInterrupt(Button3Pin, DeviceButtonsButton3Interrupt, RISING);
-    attachInterrupt(Button4Pin, DeviceButtonsButton4Interrupt, RISING);
-    attachInterrupt(Button5Pin, DeviceButtonsButton5Interrupt, RISING);
-    attachInterrupt(Button6Pin, DeviceButtonsButton6Interrupt, RISING);
-    attachInterrupt(Button7Pin, DeviceButtonsButton7Interrupt, RISING);
+    attachInterrupt(Button1Pin, SensorButtonsButton1Interrupt, RISING);
+    attachInterrupt(Button2Pin, SensorButtonsButton2Interrupt, RISING);
+    attachInterrupt(Button3Pin, SensorButtonsButton3Interrupt, RISING);
+    attachInterrupt(Button4Pin, SensorButtonsButton4Interrupt, RISING);
+    attachInterrupt(Button5Pin, SensorButtonsButton5Interrupt, RISING);
+    attachInterrupt(Button6Pin, SensorButtonsButton6Interrupt, RISING);
+    attachInterrupt(Button7Pin, SensorButtonsButton7Interrupt, RISING);
 }
 
-void DeviceButtonsWakeup()
+void SensorButtonsWakeup()
 {
     uint64_t GPIO_reason = esp_sleep_get_ext1_wakeup_status();
     int pin = (log(GPIO_reason)) / log(2);
@@ -99,16 +99,16 @@ void DeviceButtonsWakeup()
         break;
     }
 
-    attachInterrupt(Button1Pin, DeviceButtonsButton1Interrupt, RISING);
-    attachInterrupt(Button2Pin, DeviceButtonsButton2Interrupt, RISING);
-    attachInterrupt(Button3Pin, DeviceButtonsButton3Interrupt, RISING);
-    attachInterrupt(Button4Pin, DeviceButtonsButton4Interrupt, RISING);
-    attachInterrupt(Button5Pin, DeviceButtonsButton5Interrupt, RISING);
-    attachInterrupt(Button6Pin, DeviceButtonsButton6Interrupt, RISING);
-    attachInterrupt(Button7Pin, DeviceButtonsButton7Interrupt, RISING);
+    attachInterrupt(Button1Pin, SensorButtonsButton1Interrupt, RISING);
+    attachInterrupt(Button2Pin, SensorButtonsButton2Interrupt, RISING);
+    attachInterrupt(Button3Pin, SensorButtonsButton3Interrupt, RISING);
+    attachInterrupt(Button4Pin, SensorButtonsButton4Interrupt, RISING);
+    attachInterrupt(Button5Pin, SensorButtonsButton5Interrupt, RISING);
+    attachInterrupt(Button6Pin, SensorButtonsButton6Interrupt, RISING);
+    attachInterrupt(Button7Pin, SensorButtonsButton7Interrupt, RISING);
 }
 
-void DeviceButtonsUpdate()
+void SensorButtonsUpdate()
 {
     State.Buttons.Button1 = false;
     if (ButtonsInteruptState.Button1)
@@ -154,7 +154,7 @@ void DeviceButtonsUpdate()
     }
 }
 
-void DeviceButtonsShutdown()
+void SensorButtonsShutdown()
 {
     detachInterrupt(Button1Pin);
     detachInterrupt(Button2Pin);

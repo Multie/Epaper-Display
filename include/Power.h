@@ -22,8 +22,6 @@
 #include "Pins.h"
 #include "Debug.h"
 
-
-
 void setPower(bool state)
 {
     Debug("PowerSet", state);
@@ -39,30 +37,48 @@ void setPower(bool state)
 
 int activeDevices = 0;
 
-void activateDevice() {
-    if (activeDevices == 0) {
-       setPower(true); 
-       delay(10);
+void activateDevice()
+{
+    if (activeDevices == 0)
+    {
+        setPower(true);
+        delay(10);
     }
     activeDevices++;
 }
-void deactivateDevice() {
-    if (activeDevices == 1) {
-        setPower(false); 
+void deactivateDevice()
+{
+    if (activeDevices == 1)
+    {
+        setPower(false);
         delay(10);
     }
-    if (activateDevice > 0) {
+    if (activateDevice > 0)
+    {
         activeDevices--;
     }
 }
 
-void setupPower()
+void PowerStartup()
 {
     pinMode(PowerPin, OUTPUT);
-    digitalWrite(PowerPin, LOW);
-    Debug("Power", "Complete");
+    digitalWrite(PowerPin, HIGH);
 }
 
+void PowerWakeup()
+{
+    pinMode(PowerPin, OUTPUT);
+    digitalWrite(PowerPin, HIGH);
+}
 
+void PowerUpdate()
+{
+
+}
+
+void PowerShutdown()
+{
+    digitalWrite(PowerPin, LOW);
+}
 
 #endif

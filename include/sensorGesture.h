@@ -15,8 +15,8 @@
  *   limitations under the License.
  */
 
-#ifndef deviceGesture_h
-#define deviceGesture_h
+#ifndef sensorGesture_h
+#define sensorGesture_h
 
 #include <Arduino.h>
 #include "Pins.h"
@@ -33,12 +33,12 @@ volatile bool GestureInterrupt;
 
 SparkFun_APDS9960 apds = SparkFun_APDS9960();
 
-void IRAM_ATTR DeviceGestureInterrupt()
+void IRAM_ATTR SensorGestureInterrupt()
 {
     GestureInterrupt = true;
 }
 
-void DeviceGestureReadState()
+void SensorGestureReadState()
 {
 
     State.Gesture.Up = false;
@@ -78,32 +78,32 @@ void DeviceGestureReadState()
                 break;
             }
         }
-        attachInterrupt(GesturecontrolInterruptPin, DeviceGestureInterrupt, FALLING);
+        attachInterrupt(GesturecontrolInterruptPin, SensorGestureInterrupt, FALLING);
     }
 }
 
-void DeviceGestureStartup()
+void SensorGestureStartup()
 {
-    attachInterrupt(GesturecontrolInterruptPin, DeviceGestureInterrupt, FALLING);
+    attachInterrupt(GesturecontrolInterruptPin, SensorGestureInterrupt, FALLING);
     apds.init();
     apds.enableGestureSensor(true);
 }
 
-void DeviceGestureWakeup()
+void SensorGestureWakeup()
 {
     // GestureInterrupt = !digitalRead(GesturecontrolInterruptPin);
-    attachInterrupt(GesturecontrolInterruptPin, DeviceGestureInterrupt, FALLING);
+    attachInterrupt(GesturecontrolInterruptPin, SensorGestureInterrupt, FALLING);
     Wire.begin();
 }
 
-void DeviceGestureUpdate()
+void SensorGestureUpdate()
 {
     Debug("GesturecontrolInterruptPin", digitalRead(GesturecontrolInterruptPin));
     Debug("GestureInterrupt", GestureInterrupt);
-    // DeviceGestureReadState();
+    // SensorGestureReadState();
 }
 
-void DeviceGestureShutdown()
+void SensorGestureShutdown()
 {
     detachInterrupt(GesturecontrolInterruptPin);
     apds.disableGestureSensor();

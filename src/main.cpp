@@ -9,11 +9,12 @@ UniversalTime UniversalTime::UniversalTimeNow;
 #include "Transient.h"
 #include "Settings.h"
 
-#include "deviceButtons.h"
-#include "deviceSlider.h"
+#include "Power.h"
+#include "sensorButtons.h"
+#include "sensorSlider.h"
 
-#include "deviceBattery.h"
-#include "deviceGesture.h"
+#include "sensorBattery.h"
+#include "sensorGesture.h"
 
 // #include "BatteryMonitoring.h"
 #include "Sleep.h"
@@ -34,18 +35,20 @@ void setup()
     // Reboot
     delay(10000);
     Debug("Start", "Boot");
-    DeviceButtonsStartup();
-    DeviceSliderStartup();
-    DeviceBatteryStartup();
-    DeviceGestureStartup();
+    PowerStartup();
+    SensorButtonsStartup();
+    SensorSliderStartup();
+    SensorBatteryStartup();
+    SensorGestureStartup();
   }
   else
   {
     Debug("Start", "Wakeup");
-    DeviceButtonsWakeup();
-    DeviceSliderWakeup();
-    DeviceBatteryWakeup();
-    DeviceGestureWakeup();
+    PowerWakeup();
+    SensorButtonsWakeup();
+    SensorSliderWakeup();
+    SensorBatteryWakeup();
+    SensorGestureWakeup();
   }
 
   time_t now;
@@ -69,10 +72,11 @@ void setup()
 
 void loop()
 {
-  DeviceButtonsUpdate();
-  DeviceSliderUpdate();
-  DeviceBatteryUpdate();
-  DeviceGestureUpdate();
+  PowerUpdate();
+  SensorButtonsUpdate();
+  SensorSliderUpdate();
+  SensorBatteryUpdate();
+  SensorGestureUpdate();
 
 
   loopDebug();
@@ -84,10 +88,11 @@ void loop()
 void shutdown()
 {
   Debug("Shutdown", "Start");
-  DeviceGestureShutdown();
-  DeviceBatteryShutdown();
-  DeviceSliderShutdown();
-  DeviceButtonsShutdown();
+  SensorGestureShutdown();
+  SensorBatteryShutdown();
+  SensorSliderShutdown();
+  SensorButtonsShutdown();
+  PowerShutdown();
 
   Debug("Shutdown", "Active");
   setupSleepWakeup();
