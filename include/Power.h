@@ -21,42 +21,30 @@
 #include <Arduino.h>
 #include "Pins.h"
 #include "Debug.h"
+#include "Settings.h"
+#include "Transient.h"
+#include "State.h"
 
 void setPower(bool state)
 {
-    Debug("PowerSet", state);
-    if (state)
+    if (State.Power.Enabled != state)
     {
-        digitalWrite(PowerPin, HIGH);
-    }
-    else
-    {
-        digitalWrite(PowerPin, LOW);
+        State.Power.Enabled = state;
+        delay(50);
+        if (state)
+        {
+            digitalWrite(PowerPin, HIGH);
+        }
+        else
+        {
+            digitalWrite(PowerPin, LOW);
+        }
     }
 }
 
-int activeDevices = 0;
-
-void activateDevice()
+void PowerOn()
 {
-    if (activeDevices == 0)
-    {
-        setPower(true);
-        delay(10);
-    }
-    activeDevices++;
-}
-void deactivateDevice()
-{
-    if (activeDevices == 1)
-    {
-        setPower(false);
-        delay(10);
-    }
-    if (activateDevice > 0)
-    {
-        activeDevices--;
-    }
+    setPower(true);
 }
 
 void PowerStartup()
@@ -73,7 +61,6 @@ void PowerWakeup()
 
 void PowerUpdate()
 {
-
 }
 
 void PowerShutdown()

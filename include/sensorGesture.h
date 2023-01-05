@@ -48,10 +48,11 @@ void SensorGestureReadState()
 
     if (GestureInterrupt)
     {
+        GestureInterrupt = false;
         detachInterrupt(GesturecontrolInterruptPin);
         if (apds.isGestureAvailable())
         {
-            GestureInterrupt = false;
+            
             int gesture = apds.readGesture();
             switch (gesture)
             {
@@ -91,16 +92,13 @@ void SensorGestureStartup()
 
 void SensorGestureWakeup()
 {
-    // GestureInterrupt = !digitalRead(GesturecontrolInterruptPin);
     attachInterrupt(GesturecontrolInterruptPin, SensorGestureInterrupt, FALLING);
     Wire.begin();
 }
 
 void SensorGestureUpdate()
 {
-    Debug("GesturecontrolInterruptPin", digitalRead(GesturecontrolInterruptPin));
-    Debug("GestureInterrupt", GestureInterrupt);
-    // SensorGestureReadState();
+    SensorGestureReadState();
 }
 
 void SensorGestureShutdown()

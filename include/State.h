@@ -17,7 +17,7 @@
 
 #ifndef State_h
 #define State_h
-
+#pragma region Battery
 typedef struct StateBattery
 {
     bool Alarm;
@@ -25,7 +25,9 @@ typedef struct StateBattery
     float Usage;
     float Voltage;
 } StateBattery;
+#pragma endregion
 
+#pragma region Buttons
 typedef struct StateButtons
 {
     bool Button1;
@@ -36,7 +38,9 @@ typedef struct StateButtons
     bool Button6;
     bool Button7;
 } StateButtons;
+#pragma endregion
 
+#pragma region Gesture
 typedef struct StateGesture
 {
     bool Up;
@@ -44,13 +48,61 @@ typedef struct StateGesture
     bool Left;
     bool Right;
 } StateGesture;
+#pragma endregion
 
+#pragma region Slider
 typedef struct StateSlider
 {
     double Position;
     double OldPosition;
     int Raw;
 } StateSlider;
+#pragma endregion
+
+#pragma region Beeper
+enum BeeperSongs
+{
+    None = 0,
+    Accept,
+    NotAccept,
+};
+typedef struct StateBeeper {
+    bool Play;
+    enum BeeperSongs Song;
+    
+} StateBeeper;
+#pragma endregion
+
+#pragma region Wifi
+typedef struct StateWifi {
+    bool Connected;
+} StateWifi;
+#pragma endregion
+
+#pragma region Time
+
+typedef struct StateTime {
+    
+} StateTime;
+
+#pragma endregion
+
+#pragma region Power
+typedef struct StatePower {
+    bool Enabled;
+} StatePower;
+
+#pragma endregion
+
+#pragma region Display
+typedef struct StateDisplay {
+    bool painted;
+    bool Active;
+    bool Sleep;
+} StateDisplay;
+
+#pragma endregion
+
 
 typedef struct StateData
 {
@@ -58,8 +110,12 @@ typedef struct StateData
     StateButtons Buttons;
     StateGesture Gesture;
     StateSlider Slider;
+    StateBeeper Beeper;
+    StatePower Power;
+    StateWifi Wifi;
+    StateDisplay Display;
 } StateData;
 
-StateData State;
+StateData State = {};
 
 #endif

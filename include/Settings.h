@@ -24,29 +24,51 @@
 #include <Preferences.h>
 Preferences preferences;
 
-// Battery
+#pragma region Battery
 typedef struct SettingsBattery
 {
     float MinVoltage;
     float MaxVoltage;
 } SettingsBattery;
+#pragma endregion
 
-// Buttons
+#pragma region Buttons
 typedef struct SettingsButtons
 {
 
 } SettingsButtons;
-// Gesture
+#pragma endregion
+
+#pragma region Gesture
 typedef struct SettingsGesture
 {
 
 } SettingsGesture;
-// Slider
+#pragma endregion
+
+#pragma region Slider
 typedef struct SettingsSlider
 {
     int Min;
     int Max;
 } SettingsSlider;
+#pragma endregion
+
+#pragma region Wifi
+typedef struct SettingsWifi
+{
+    char Ssid[32];      // string
+    char Password[32];  // string
+    int ConnectionTrys; // count
+} SettingsWifi;
+#pragma endregion
+
+#pragma region Time
+typedef struct SettingsTime
+{
+    int Syncinterval; // seconds
+} SettingsTime;
+#pragma endregion
 
 typedef struct __attribute__((packed)) SettingsStruct
 {
@@ -54,14 +76,19 @@ typedef struct __attribute__((packed)) SettingsStruct
     SettingsButtons Buttons;
     SettingsGesture Gesture;
     SettingsSlider Slider;
+    SettingsTime Time;
+    SettingsWifi Wifi;
     uint64_t Checksum;
 } SettingsStruct;
 
 SettingsStruct Settings;
 
-
-void resetSettings() {
-    
+void setSettings()
+{
+    strcpy((Settings.Wifi.Ssid), "WIFI_SSID_REDACTED");
+    strcpy((Settings.Wifi.Password), "WIFI_PASSWORD_REDACTED");
+    Settings.Wifi.ConnectionTrys = 100;
+    Settings.Time.Syncinterval = 3600;
 }
 
 void loadSettings()

@@ -25,6 +25,8 @@
 #include "Transient.h"
 #include "State.h"
 
+#include "Power.h"
+
 void SensorSliderReadState()
 {
     State.Slider.Raw = analogRead(SliderPin);
@@ -46,6 +48,7 @@ void SensorSliderWakeup()
 // Update is called in a loop
 void SensorSliderUpdate()
 {
+    PowerOn();
     SensorSliderReadState();
 }
 

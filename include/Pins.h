@@ -89,11 +89,11 @@ IOVn        # Tx        #
 #define Button3Pin IO35
 #define Button4Pin IO34
 #define Button5Pin IO33
-#define Button6Pin IO32
+#define Button6Pin IO25
 #define Button7Pin IO13
 // SPI
 #define SpiMosiPin IO23
-//#define SpiMisoPin IO19
+// #define SpiMisoPin IO19
 #define SpiClkPin IO18
 // Display
 #define DisplayCsPin IO4
@@ -101,16 +101,19 @@ IOVn        # Tx        #
 #define DisplayRstPin IO12
 #define DisplayBusyPin IO17
 // Slider
-#define SliderPin IO25
+#define SliderPin IO32
 // I2C
 #define I2cSclPin IO22
 #define I2cSdaPin IO21
 // Gesturecontrol
 #define GesturecontrolInterruptPin IO26
+// Beeper
+#define BeeperPin IO2
 
 void setupPins()
 {
     pinMode(PowerPin, OUTPUT);
+    digitalWrite(PowerPin, LOW);
 
     pinMode(Button1Pin, INPUT);
     pinMode(Button2Pin, INPUT);
@@ -121,18 +124,26 @@ void setupPins()
     pinMode(Button7Pin, INPUT);
 
     pinMode(SpiMosiPin, OUTPUT);
-    //pinMode(SpiMisoPin, INPUT);
+    digitalWrite(SpiMosiPin, LOW);
+    // pinMode(SpiMisoPin, INPUT);
     pinMode(SpiClkPin, OUTPUT);
+    digitalWrite(SpiClkPin, LOW);
 
     pinMode(DisplayCsPin, OUTPUT);
+    digitalWrite(DisplayCsPin, LOW);
     pinMode(DisplayDcPin, OUTPUT);
+    digitalWrite(DisplayDcPin, LOW);
     pinMode(DisplayRstPin, OUTPUT);
+    digitalWrite(DisplayRstPin, LOW);
     pinMode(DisplayBusyPin, INPUT);
 
     pinMode(I2cSclPin, INPUT);
     pinMode(I2cSdaPin, INPUT);
 
     pinMode(GesturecontrolInterruptPin, INPUT);
+
+    pinMode(BeeperPin, OUTPUT);
+    digitalWrite(BeeperPin, LOW);
 }
 
 #endif

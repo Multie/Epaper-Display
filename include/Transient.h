@@ -20,22 +20,37 @@
 #ifndef TransientData_h
 #define TransientData_h
 #include <Arduino.h>
-
+#pragma region Battery
 typedef struct TransientBattery {
     float LastPercent;
 } TransientBattery;
+#pragma endregion
 
+#pragma region Buttons
 typedef struct TransientButtons {
 
 } TransientButtons;
+#pragma endregion
 
+#pragma region Gesture
 typedef struct TransientGesture {
     bool Active;
 } TransientGesture;
+#pragma endregion
 
+#pragma region Slider
 typedef struct TransientSlider {
 
 } TransientSlider;
+#pragma endregion
+
+#pragma region Time
+
+typedef struct TransientTime {
+    time_t LastSync;
+} TransientTime;
+
+#pragma endregion
 
 // Max 8KB of Data
 typedef struct __attribute__((packed)) TransientData
@@ -46,12 +61,12 @@ typedef struct __attribute__((packed)) TransientData
     TransientSlider Slider;
 
 
-    time_t LastTimeSync;
+    TransientTime Time;
     uint64_t Checksum;
 } TransientData;
 
-RTC_DATA_ATTR TransientData DeepSleepState;
-TransientData Transient;
+RTC_DATA_ATTR TransientData DeepSleepState = {};
+TransientData Transient = {};
 
 unsigned int CalculateStateChecksum(TransientData *state)
 {
@@ -69,8 +84,8 @@ unsigned int CalculateStateChecksum(TransientData *state)
 
 void ResetTransientData(TransientData *state)
 {
-   state->LastTimeSync = 0;
-   
+   TransientData data = {};
+   memcpy((void *)state, (void *)&data, sizeof(data));
 }
 
 void LoadTransientData(TransientData *state)
@@ -91,9 +106,24 @@ void LoadTransientData(TransientData *state)
 void SaveTransientData(TransientData *state)
 {
     memcpy((void *)&DeepSleepState, (void *)&state, sizeof(DeepSleepState));
-    
-
     DeepSleepState.Checksum = CalculateStateChecksum(&DeepSleepState);
+}
+
+
+void TransientStartup() {
+
+}
+
+void TransientWakeup() {
+    LoadTransientData(&Transient);
+}
+
+void TransientUpdate() {
+
+}
+
+void TransientShutdown() {
+    SaveTransientData(&Transient);
 }
 
 #endif
