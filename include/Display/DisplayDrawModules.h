@@ -41,7 +41,7 @@ enum TextAlign
     BottomRight
 };
 
-typedef struct DisplayParameter
+typedef struct DisplayParameterData
 {
     char type[10];      //
     int x;              //
@@ -69,7 +69,22 @@ typedef struct DisplayParameter
     };
     bool fill; //
     TextAlign align;
-} DisplayParameter;
+} DisplayParameterData;
+
+void CopyDisplayParameterData(DisplayParameterData *dest, DisplayParameterData *source)
+{
+    strcpy(dest->type, source->type);
+    dest->x = source->x;
+    dest->y = source->y;
+    dest->x2 = source->x2;
+    dest->y2 = source->y2;
+    dest->color = source->color;
+    dest->radius = source->radius;
+    strcpy(dest->label, source->label);
+    dest->x = source->x;
+    dest->fill = source->fill;
+    dest->align = source->align;
+}
 
 void DisplayDrawPixel(int x, int y, DisplayColor color)
 {
@@ -224,7 +239,7 @@ void DisplayDrawText(int x, int y, int width, int height, DisplayColor color, in
     }
     textWidth = text.length() * font->Width;
     textHeight = font->Height;
-    
+
     // textX
     if (align == TextAlign::TopLeft || align == TextAlign::CenterLeft || align == TextAlign::BottomLeft)
     {
@@ -245,10 +260,10 @@ void DisplayDrawText(int x, int y, int width, int height, DisplayColor color, in
     }
     else if (align == TextAlign::CenterLeft || align == TextAlign::CenterCenter || align == TextAlign::CenterRight)
     {
-        //DebugValue(((float)y));
-        //DebugValue((((float)height) / 2.0));
-        //DebugValue((((float)textHeight) / 2.0));
-        
+        // DebugValue(((float)y));
+        // DebugValue((((float)height) / 2.0));
+        // DebugValue((((float)textHeight) / 2.0));
+
         textY = (int)(((float)y) + (((float)height) / 2.0) - (((float)font->Baseline) / 2.0));
     }
     else if (align == TextAlign::BottomLeft || align == TextAlign::BottomCenter || align == TextAlign::BottomRight)
@@ -271,10 +286,10 @@ void DisplayDrawText(int x, int y, int width, int height, DisplayColor color, in
         DisplayPaintBlack.DrawStringAt(textX, textY, text.c_str(), font, PaintColor::UNCOLORED);
         DisplayPaintRed.DrawStringAt(textX, textY, text.c_str(), font, PaintColor::COLORED);
     }
-   /* DebugValue(textX);
-    DebugValue(textY);
-     DebugValue(textWidth);
-     DebugValue(textHeight);*/
+    /* DebugValue(textX);
+     DebugValue(textY);
+      DebugValue(textWidth);
+      DebugValue(textHeight);*/
 }
 void DisplayDrawValue(int x, int y, int width, int height, DisplayColor color, int size, TextAlign align, String name)
 {
@@ -300,7 +315,7 @@ void DisplayDrawImage(int x, int y, int width, int height, DisplayColor color)
     }
 }
 
-void DisplayDrawParameter(DisplayParameter *param)
+void DisplayDrawParameter(DisplayParameterData *param)
 {
     if (strcmp(param->type, "pixel") == 0)
     {
@@ -359,6 +374,7 @@ String DisplayParseValue(String keyAndValue)
     return "";
 }
 
+DisplayParameterData DisplayParameterOld = {};
 void DisplayParseLine(String line)
 {
     int lineLength = line.length();
@@ -367,8 +383,7 @@ void DisplayParseLine(String line)
 
     char sep = 166;
     line += String(sep);
-
-    DisplayParameter parameter = {};
+    DisplayParameterData parameter = {};
     bool exist = false;
     while (true)
     {
@@ -383,6 +398,14 @@ void DisplayParseLine(String line)
             String key = DisplayParseKey(keyAndValue);
             String value = DisplayParseValue(keyAndValue);
             exist = true;
+            // Hold
+            if (key == "z")
+            {
+                if (value.compareTo("1") == 0)
+                {
+                    CopyDisplayParameterData(&parameter,&DisplayParameterOld);
+                }
+            }
             // Type
             if (key == "t")
             {
@@ -478,34 +501,36 @@ void DisplayParseLine(String line)
                 {
                     parameter.align = TextAlign::BottomRight;
                 }
-                else {
-                    Debug("TextAlignUnknown",value);
+                else
+                {
+                    Debug("TextAlignUnknown", value);
                 }
             }
         }
         seperatorPositionLast = position + 1;
     }
 
-if (exist) {
-     DebugStruct(parameter);
-    DebugStructValue(parameter.type);
-    DebugStructValue(parameter.x);
-    DebugStructValue(parameter.y);
-    DebugStructValue(parameter.x2);
-    DebugStructValue(parameter.y2);
-    DebugStructValue(parameter.width);
-    DebugStructValue(parameter.height);
-    DebugStructValue(parameter.radius);
-    DebugStructValue(parameter.label);
-    DebugStructValue(parameter.name);
-    DebugStructValue(parameter.fill);
-    DebugStructValue(parameter.color);
-    DebugStructValue(parameter.align);
-    DebugStructEnd();
+    if (exist)
+    {
+        DebugStruct(parameter);
+        DebugStructValue(parameter.type);
+        DebugStructValue(parameter.x);
+        DebugStructValue(parameter.y);
+        DebugStructValue(parameter.x2);
+        DebugStructValue(parameter.y2);
+        DebugStructValue(parameter.width);
+        DebugStructValue(parameter.height);
+        DebugStructValue(parameter.radius);
+        DebugStructValue(parameter.label);
+        DebugStructValue(parameter.name);
+        DebugStructValue(parameter.fill);
+        DebugStructValue(parameter.color);
+        DebugStructValue(parameter.align);
+        DebugStructEnd();
 
-    DisplayDrawParameter(&parameter);
-}
-   
+        DisplayDrawParameter(&parameter);
+        CopyDisplayParameterData(&DisplayParameterOld,&parameter);
+    }
 }
 void DisplayParseText(String text)
 {

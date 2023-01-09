@@ -39,19 +39,6 @@ function getData(path, consume) {
                 console.log("something went wrong: " + e);
                 reject(e);
             });
-        /*
-                const req = new XMLHttpRequest();
-                req.addEventListener("load", () => {
-                    resolve(req.responseText);
-                });
-        
-                req.addEventListener("progress", (ev) => {
-                    console.log(ev, this.responseText);
-                    callback(ev);
-        
-                });
-                req.open("GET", baseurl + path);
-                req.send();*/
     });
 }
 
@@ -65,31 +52,107 @@ function postData(path, text) {
         req.send(text);
     });
 }
-
+/*
+    x PosX
+    y PosY
+    x2 PosX2
+    y2 PosY2
+    c Color
+    r Radius
+    f Fill
+    w Width
+    h Height
+    s Textsize
+    l Label
+    v Value
+    n Name
+    z hold
+*/
 class DisplayOption {
     constructor() {
         this.name = "";
-        this.options = {};
+        this.options = {
+            z: {
+                type: "checkbox",
+                name: "Hold",
+                value: "",
+                true: "1",
+                false: ""
+            }
+        };
         this.id = Date.now() + "#" + Math.round(Math.random() * 10000).toString().padStart(5, "0");
         this.type = "---";
         this.hide = false;
     }
 
     getOutputValue(name, value) {
-        // console.log(name + String.fromCharCode(187) + value + String.fromCharCode(166))
-        return name + String.fromCharCode(187) + value.toString() + String.fromCharCode(166)
+        console.log(name + String.fromCharCode(187) + value + String.fromCharCode(166))
+        
+        if (value == null || value == undefined) {
+            return "";
+        }
+        if (value.toString().length == 0) {
+            return "";
+        }
+        if (typeof(value) == "number" && isNaN(value)) {
+            console.log("is nan")
+            return "";
+        }
+
+        return name + String.fromCharCode(187) + value.toString() + String.fromCharCode(166);
+
     }
     getOutput() {
-        let out = ""
-        out += this.getOutputValue("t", this.type);
+        let output = "";
+        if (this.options.z) {
+            let key = "z";
+            output+= this.getOutputValue(key, this.options[key].value);
+        }
+        output += this.getOutputValue("t", this.type);
 
         let keys = Object.keys(this.options);
         console.log(this.options);
+        let indexofz = keys.indexOf("z");
+        if (indexofz >= 0) {
+            keys.splice(indexofz,1);
+        }
         keys.forEach(key => {
-            out += this.getOutputValue(key, this.options[key].value.toString());
+            output += this.getOutputValue(key, this.options[key].value);
         });
 
-        return out;
+        return output;
+    }
+
+
+    createOptionsHtml(parrent) {
+        let itemroot = document.createElement("div");
+        itemroot.classList.add("itemGroup")
+        itemroot.id = this.id;
+        parrent.appendChild(itemroot);
+
+        let item = document.createElement("div");
+        item.classList.add("item");
+        itemroot.appendChild(item);
+
+        let label = document.createElement("div");
+        label.classList.add("itemLabel");
+        label.innerHTML = this.name;
+        item.appendChild(label);
+
+        let value = document.createElement("div");
+        value.classList.add("itemValue");
+        item.appendChild(value);
+
+        let button = document.createElement("button");
+        button.innerHTML = "Add";
+        button.setAttribute("type", this.type);
+        button.onclick = ((ev) => {
+            let button = ev.originalTarget;
+            let type = button.getAttribute("type");
+            display.addContent(type);
+        });
+        value.appendChild(button);
+
     }
 
 
@@ -146,7 +209,6 @@ class DisplayOption {
 
             item.appendChild(value);
         }
-
         keys.forEach(key => {
             let option = this.options[key];
             let item = document.createElement("div");
@@ -200,12 +262,18 @@ class DisplayOption {
             }
             else if (option.type == "select") {
                 input = document.createElement("select");
+                let opt = document.createElement("option");
+                opt.value = "";
+                opt.innerHTML = "-";
+                input.appendChild(opt);
+
                 option.options.forEach(element => {
                     let opt = document.createElement("option");
                     opt.value = element.value;
                     opt.innerHTML = element.label;
                     input.appendChild(opt);
                 });
+
                 input.onchange = ((ev) => {
                     let key = ev.originalTarget.getAttribute("name");
                     this.options[key].value = ev.originalTarget.value;
@@ -219,7 +287,6 @@ class DisplayOption {
                 input.checked = option.value == option.true;
                 input.onchange = (ev => {
                     let key = ev.originalTarget.getAttribute("name");
-
                     this.options[key].value = ev.originalTarget.checked ? this.options[key].true : this.options[key].false;
                     console.log("change", this.options[key].value);
                     display.createOutput();
@@ -235,41 +302,10 @@ class DisplayOption {
 
     }
 
-    createOptionsHtml(parrent) {
-        let itemroot = document.createElement("div");
-        itemroot.classList.add("itemGroup")
-        itemroot.id = this.id;
-        parrent.appendChild(itemroot);
 
-        let item = document.createElement("div");
-        item.classList.add("item");
-        itemroot.appendChild(item);
-
-        let label = document.createElement("div");
-        label.classList.add("itemLabel");
-        label.innerHTML = this.name;
-        item.appendChild(label);
-
-        let value = document.createElement("div");
-        value.classList.add("itemValue");
-        item.appendChild(value);
-
-        let button = document.createElement("button");
-        button.innerHTML = "Add";
-        button.setAttribute("type", this.type);
-        button.onclick = ((ev) => {
-            let button = ev.originalTarget;
-            let type = button.getAttribute("type");
-            display.addContent(type);
-        });
-        value.appendChild(button);
-
-    }
     clone() {
         return new DisplayOption();
     }
-
-
 }
 
 class DisplayOptionPixel extends DisplayOption {
@@ -277,20 +313,20 @@ class DisplayOptionPixel extends DisplayOption {
         super();
         this.name = "Pixel";
         this.type = "pixel";
-        this.options = {
+        let options = {
             x: {
                 type: "number",
                 name: "X",
                 min: 0,
                 max: 400,
-                value: 0
+                value: ""
             },
             y: {
                 type: "number",
                 name: "Y",
                 min: 0,
                 max: 300,
-                value: 0
+                value: ""
             },
             c: {
                 type: "select",
@@ -300,9 +336,11 @@ class DisplayOptionPixel extends DisplayOption {
                     { label: "Red", value: "r" },
                     { label: "White", value: "w" },
                 ],
-                value: "b"
+                value: ""
             }
-        }
+        };
+        this.options = { ...this.options, ...options };
+
     }
     clone() {
         return new DisplayOptionPixel();
@@ -314,34 +352,34 @@ class DisplayOptionLine extends DisplayOption {
         this.name = "Line";
         this.type = "line";
 
-        this.options = {
+        let options = {
             x: {
                 type: "number",
                 name: "Start X",
                 min: 0,
                 max: 400,
-                value: 0
+                value: ""
             },
             y: {
                 type: "number",
                 name: "Start Y",
                 min: 0,
                 max: 300,
-                value: 0
+                value: ""
             },
             x2: {
                 type: "number",
                 name: "End X",
                 min: 0,
                 max: 400,
-                value: 0
+                value: ""
             },
             y2: {
                 type: "number",
                 name: "End Y",
                 min: 0,
                 max: 300,
-                value: 0
+                value: ""
             },
             c: {
                 type: "select",
@@ -351,9 +389,10 @@ class DisplayOptionLine extends DisplayOption {
                     { label: "Red", value: "r" },
                     { label: "White", value: "w" },
                 ],
-                value: "b"
+                value: ""
             }
         }
+        this.options = { ...this.options, ...options };
     }
     clone() {
         return new DisplayOptionLine();
@@ -366,26 +405,26 @@ class DisplayOptionCircle extends DisplayOption {
         super();
         this.name = "Circle";
         this.type = "circle";
-        this.options = {
+        let options = {
             x: {
                 type: "number",
                 name: "X",
                 min: 0,
                 max: 400,
-                value: 0
+                value: ""
             },
             y: {
                 type: "number",
                 name: "Y",
                 min: 0,
                 max: 300,
-                value: 0
+                value: ""
             },
             r: {
                 type: "number",
                 name: "Radius",
                 min: 0,
-                value: 0
+                value: ""
             },
             c: {
                 type: "select",
@@ -395,16 +434,20 @@ class DisplayOptionCircle extends DisplayOption {
                     { label: "Red", value: "r" },
                     { label: "White", value: "w" },
                 ],
-                value: "b"
+                value: ""
             },
             f: {
-                type: "checkbox",
+                type: "select",
                 name: "Fill",
-                value: "0",
-                true: "1",
-                false: "0"
+                options: [
+                    { label: "1", value: "1" },
+                    { label: "0", value: "0" },
+                ],
+                value: "",
+                
             }
         }
+        this.options = { ...this.options, ...options };
     }
     clone() {
         return new DisplayOptionCircle();
@@ -415,34 +458,34 @@ class DisplayOptionRectangle extends DisplayOption {
         super();
         this.name = "Rectangle";
         this.type = "rect";
-        this.options = {
+        let options = {
             x: {
                 type: "number",
                 name: "X",
                 min: 0,
                 max: 400,
-                value: 0
+                value: ""
             },
             y: {
                 type: "number",
                 name: "Y",
                 min: 0,
                 max: 300,
-                value: 0
+                value: ""
             },
             w: {
                 type: "number",
                 name: "Width",
                 min: 0,
                 max: 400,
-                value: 0
+                value: ""
             },
             h: {
                 type: "number",
                 name: "Height",
                 min: 0,
                 max: 300,
-                value: 0
+                value: ""
             },
             c: {
                 type: "select",
@@ -452,16 +495,20 @@ class DisplayOptionRectangle extends DisplayOption {
                     { label: "Red", value: "r" },
                     { label: "White", value: "w" },
                 ],
-                value: "b"
+                value: ""
             },
             f: {
-                type: "checkbox",
+                type: "select",
                 name: "Fill",
-                value: "0",
-                true: "1",
-                false: "0"
+                options: [
+                    { label: "1", value: "1" },
+                    { label: "0", value: "0" },
+                ],
+                value: "",
+                
             }
         };
+        this.options = { ...this.options, ...options };
     }
     clone() {
         return new DisplayOptionRectangle();
@@ -472,34 +519,34 @@ class DisplayOptionText extends DisplayOption {
         super();
         this.name = "Text";
         this.type = "text";
-        this.options = {
+        let options = {
             x: {
                 type: "number",
                 name: "Start X",
                 min: 0,
                 max: 400,
-                value: 0
+                value: ""
             },
             y: {
                 type: "number",
                 name: "Start Y",
                 min: 0,
                 max: 300,
-                value: 0
+                value: ""
             },
             w: {
                 type: "number",
                 name: "Width",
                 min: 0,
                 max: 400,
-                value: 0
+                value: ""
             },
             h: {
                 type: "number",
                 name: "Height",
                 min: 0,
                 max: 300,
-                value: 0
+                value: ""
             },
             c: {
                 type: "select",
@@ -509,7 +556,7 @@ class DisplayOptionText extends DisplayOption {
                     { label: "Red", value: "r" },
                     { label: "White", value: "w" },
                 ],
-                value: "b"
+                value: ""
             },
             s: {
                 type: "select",
@@ -521,7 +568,7 @@ class DisplayOptionText extends DisplayOption {
                     { label: "20px", value: "20" },
                     { label: "24px", value: "24" },
                 ],
-                value: "16"
+                value: ""
             },
             a: {
                 type: "select",
@@ -537,7 +584,7 @@ class DisplayOptionText extends DisplayOption {
                     { label: "Bottom Center", value: "bc" },
                     { label: "Bottom Right", value: "br" },
                 ],
-                value: "cc"
+                value: ""
             },
             l: {
                 type: "text",
@@ -545,6 +592,7 @@ class DisplayOptionText extends DisplayOption {
                 value: ""
             }
         };
+        this.options = { ...this.options, ...options };
     }
     clone() {
         return new DisplayOptionText();
@@ -555,34 +603,34 @@ class DisplayOptionValue extends DisplayOption {
         super();
         this.name = "Value";
         this.type = "value";
-        this.options = {
+        let options = {
             x: {
                 type: "number",
                 name: "Start X",
                 min: 0,
                 max: 400,
-                value: 0
+                value: ""
             },
             y: {
                 type: "number",
                 name: "Start Y",
                 min: 0,
                 max: 300,
-                value: 0
+                value: ""
             },
             w: {
                 type: "number",
                 name: "Width",
                 min: 0,
                 max: 400,
-                value: 0
+                value: ""
             },
             h: {
                 type: "number",
                 name: "Height",
                 min: 0,
                 max: 300,
-                value: 0
+                value: ""
             },
             c: {
                 type: "select",
@@ -592,7 +640,7 @@ class DisplayOptionValue extends DisplayOption {
                     { label: "Red", value: "r" },
                     { label: "White", value: "w" },
                 ],
-                value: "b"
+                value: ""
             },
             s: {
                 type: "select",
@@ -604,7 +652,7 @@ class DisplayOptionValue extends DisplayOption {
                     { label: "20px", value: "20" },
                     { label: "24px", value: "24" },
                 ],
-                value: "16"
+                value: ""
             },
             a: {
                 type: "select",
@@ -620,14 +668,15 @@ class DisplayOptionValue extends DisplayOption {
                     { label: "Bottom Center", value: "bc" },
                     { label: "Bottom Right", value: "br" },
                 ],
-                value: "cc"
+                value: ""
             },
-            v: {
+            n: {
                 type: "text",
                 name: "Name",
                 value: ""
             }
         };
+        this.options = { ...this.options, ...options };
     }
     clone() {
         return new DisplayOptionValue();
@@ -638,34 +687,34 @@ class DisplayOptionImage extends DisplayOption {
         super();
         this.name = "Image";
         this.type = "image";
-        this.options = {
+        let options = {
             x: {
                 type: "number",
                 name: "Start X",
                 min: 0,
                 max: 400,
-                value: 0
+                value: ""
             },
             y: {
                 type: "number",
                 name: "Start Y",
                 min: 0,
                 max: 300,
-                value: 0
+                value: ""
             },
             w: {
                 type: "number",
                 name: "Width",
                 min: 0,
                 max: 400,
-                value: 0
+                value: ""
             },
             h: {
                 type: "number",
                 name: "Height",
                 min: 0,
                 max: 300,
-                value: 0
+                value: ""
             },
             c: {
                 type: "select",
@@ -675,7 +724,7 @@ class DisplayOptionImage extends DisplayOption {
                     { label: "Red", value: "r" },
                     { label: "White", value: "w" },
                 ],
-                value: "b"
+                value: ""
             },
             n: {
                 type: "text",
@@ -683,6 +732,7 @@ class DisplayOptionImage extends DisplayOption {
                 value: ""
             },
         };
+        this.options = { ...this.options, ...options };
     }
 
     clone() {
@@ -866,7 +916,7 @@ t»line¦x»40¦y»0¦x2»40¦y2»23¦c»w¦`;
     }
 
     setDisplay() {
-        console.log("text",this.text);
+        console.log("text", this.text);
         return postData("/api/display/image", this.text);
 
         return new Promise((resolve) => { resolve() });

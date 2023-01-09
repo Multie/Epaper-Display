@@ -87,7 +87,7 @@ void setSettings()
 {
     strcpy((Settings.Wifi.Ssid), "WIFI_SSID_REDACTED");
     strcpy((Settings.Wifi.Password), "WIFI_PASSWORD_REDACTED");
-    Settings.Wifi.ConnectionTrys = 100;
+    Settings.Wifi.ConnectionTrys = 25;
     Settings.Time.Syncinterval = 3600;
 }
 

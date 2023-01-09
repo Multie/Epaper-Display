@@ -244,38 +244,52 @@ void Paint::DrawStringAt(int x, int y, const char *text, sFONT *font, PaintColor
 void Paint::DrawLine(int x0, int y0, int x1, int y1, PaintColor colored)
 {
     this->Changed = true;
+    if (x0 > x1)
+    {
+        int h = x0;
+        x0 = x1;
+        x1 = h;
+    }
+    if (y0 > y1)
+    {
+        int h = y0;
+        y0 = y1;
+        y1 = h;
+    }
     if (x0 == x1)
     {
+
         DrawVerticalLine(x0, y0, y1 - y0, colored);
     }
     else if (y0 == y1)
     {
+
         DrawHorizontalLine(x0, y0, x1 - x0, colored);
     }
-    else {
-        /* Bresenham algorithm */
-    int dx = x1 - x0 >= 0 ? x1 - x0 : x0 - x1;
-    int sx = x0 < x1 ? 1 : -1;
-    int dy = y1 - y0 <= 0 ? y1 - y0 : y0 - y1;
-    int sy = y0 < y1 ? 1 : -1;
-    int err = dx + dy;
-
-    while ((x0 != x1) && (y0 != y1))
+    else
     {
-        DrawPixel(x0, y0, colored);
-        if (2 * err >= dy)
+        /* Bresenham algorithm */
+        int dx = x1 - x0 >= 0 ? x1 - x0 : x0 - x1;
+        int sx = x0 < x1 ? 1 : -1;
+        int dy = y1 - y0 <= 0 ? y1 - y0 : y0 - y1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx + dy;
+
+        while ((x0 != x1) && (y0 != y1))
         {
-            err += dy;
-            x0 += sx;
-        }
-        if (2 * err <= dx)
-        {
-            err += dx;
-            y0 += sy;
+            DrawPixel(x0, y0, colored);
+            if (2 * err >= dy)
+            {
+                err += dy;
+                x0 += sx;
+            }
+            if (2 * err <= dx)
+            {
+                err += dx;
+                y0 += sy;
+            }
         }
     }
-    }
-    
 }
 
 /**
