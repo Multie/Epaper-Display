@@ -2138,6 +2138,7 @@ sFONT Font20 = {
   Font20_Table,
   14, /* Width */
   20, /* Height */
+  14, /* Baseline*/
 };
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

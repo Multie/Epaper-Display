@@ -43,7 +43,7 @@ Paint::~Paint()
 /**
  *  @brief: clear the image
  */
-void Paint::Clear(int colored)
+void Paint::Clear(PaintColor colored)
 {
     this->Changed = true;
     for (int x = 0; x < this->width; x++)
@@ -59,7 +59,7 @@ void Paint::Clear(int colored)
  *  @brief: this draws a pixel by absolute coordinates.
  *          this function won't be affected by the rotate parameter.
  */
-void Paint::DrawAbsolutePixel(int x, int y, int colored)
+void Paint::DrawAbsolutePixel(int x, int y, PaintColor colored)
 {
 
     if (x < 0 || x >= this->width || y < 0 || y >= this->height)
@@ -135,9 +135,9 @@ void Paint::SetRotate(int rotate)
 /**
  *  @brief: this draws a pixel by the coordinates
  */
-void Paint::DrawPixel(int x, int y, int colored)
+void Paint::DrawPixel(int x, int y, PaintColor colored)
 {
-    
+
     int point_temp;
     if (this->rotate == ROTATE_0)
     {
@@ -188,7 +188,7 @@ void Paint::DrawPixel(int x, int y, int colored)
 /**
  *  @brief: this draws a charactor on the frame buffer but not refresh
  */
-void Paint::DrawCharAt(int x, int y, char ascii_char, sFONT *font, int colored)
+void Paint::DrawCharAt(int x, int y, char ascii_char, sFONT *font, PaintColor colored)
 {
     this->Changed = true;
     int i, j;
@@ -218,7 +218,7 @@ void Paint::DrawCharAt(int x, int y, char ascii_char, sFONT *font, int colored)
 /**
  *  @brief: this displays a string on the frame buffer but not refresh
  */
-void Paint::DrawStringAt(int x, int y, const char *text, sFONT *font, int colored)
+void Paint::DrawStringAt(int x, int y, const char *text, sFONT *font, PaintColor colored)
 {
     this->Changed = true;
     const char *p_text = text;
@@ -241,10 +241,19 @@ void Paint::DrawStringAt(int x, int y, const char *text, sFONT *font, int colore
 /**
  *  @brief: this draws a line on the frame buffer
  */
-void Paint::DrawLine(int x0, int y0, int x1, int y1, int colored)
+void Paint::DrawLine(int x0, int y0, int x1, int y1, PaintColor colored)
 {
     this->Changed = true;
-    /* Bresenham algorithm */
+    if (x0 == x1)
+    {
+        DrawVerticalLine(x0, y0, y1 - y0, colored);
+    }
+    else if (y0 == y1)
+    {
+        DrawHorizontalLine(x0, y0, x1 - x0, colored);
+    }
+    else {
+        /* Bresenham algorithm */
     int dx = x1 - x0 >= 0 ? x1 - x0 : x0 - x1;
     int sx = x0 < x1 ? 1 : -1;
     int dy = y1 - y0 <= 0 ? y1 - y0 : y0 - y1;
@@ -265,12 +274,14 @@ void Paint::DrawLine(int x0, int y0, int x1, int y1, int colored)
             y0 += sy;
         }
     }
+    }
+    
 }
 
 /**
  *  @brief: this draws a horizontal line on the frame buffer
  */
-void Paint::DrawHorizontalLine(int x, int y, int line_width, int colored)
+void Paint::DrawHorizontalLine(int x, int y, int line_width, PaintColor colored)
 {
     this->Changed = true;
     int i;
@@ -283,7 +294,7 @@ void Paint::DrawHorizontalLine(int x, int y, int line_width, int colored)
 /**
  *  @brief: this draws a vertical line on the frame buffer
  */
-void Paint::DrawVerticalLine(int x, int y, int line_height, int colored)
+void Paint::DrawVerticalLine(int x, int y, int line_height, PaintColor colored)
 {
     this->Changed = true;
     int i;
@@ -296,7 +307,7 @@ void Paint::DrawVerticalLine(int x, int y, int line_height, int colored)
 /**
  *  @brief: this draws a rectangle
  */
-void Paint::DrawRectangle(int x0, int y0, int x1, int y1, int colored)
+void Paint::DrawRectangle(int x0, int y0, int x1, int y1, PaintColor colored)
 {
     this->Changed = true;
     int min_x, min_y, max_x, max_y;
@@ -314,7 +325,7 @@ void Paint::DrawRectangle(int x0, int y0, int x1, int y1, int colored)
 /**
  *  @brief: this draws a filled rectangle
  */
-void Paint::DrawFilledRectangle(int x0, int y0, int x1, int y1, int colored)
+void Paint::DrawFilledRectangle(int x0, int y0, int x1, int y1, PaintColor colored)
 {
     this->Changed = true;
     int min_x, min_y, max_x, max_y;
@@ -333,7 +344,7 @@ void Paint::DrawFilledRectangle(int x0, int y0, int x1, int y1, int colored)
 /**
  *  @brief: this draws a circle
  */
-void Paint::DrawCircle(int x, int y, int radius, int colored)
+void Paint::DrawCircle(int x, int y, int radius, PaintColor colored)
 {
     this->Changed = true;
     /* Bresenham algorithm */
@@ -367,7 +378,7 @@ void Paint::DrawCircle(int x, int y, int radius, int colored)
 /**
  *  @brief: this draws a filled circle
  */
-void Paint::DrawFilledCircle(int x, int y, int radius, int colored)
+void Paint::DrawFilledCircle(int x, int y, int radius, PaintColor colored)
 {
     this->Changed = true;
     /* Bresenham algorithm */

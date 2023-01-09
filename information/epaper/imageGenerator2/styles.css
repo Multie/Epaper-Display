@@ -1,0 +1,47 @@
+
+
+html ,body {
+  padding: 0;
+  margin: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+
+}
+
+.root {
+  display: flex;
+  border: 1px solid rgb(167, 167, 167);
+  height: 100%;
+  width: 100%;
+}
+
+.sidebar {
+  flex-grow: 0;
+  width: 20%;
+  height: 100%;
+}
+
+.center {
+  flex-grow: 1;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: scroll;
+}
+
+/* center */
+.drawContainer {
+  background:  rgb(167, 167, 167);
+  width: 75%;
+  height: 75%;
+}
+
+.drawCanvas {
+  height: 100%;
+  width: 100%;
+}
+
+

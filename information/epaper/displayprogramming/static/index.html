@@ -1,0 +1,64 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Epaper Test</title>
+    <meta name="description" content="A simple HTML5 Template for new projects.">
+    <meta name="author" content="SitePoint">
+
+    <link rel="stylesheet" href="styles.css">
+
+</head>
+
+<body>
+    <div class="root">
+        <div class="sidebar" id="OptionsAddDiv">
+            <div class="itemGroup">
+                <div class="item">
+                    <div class="itemLabel">
+                        Url
+                    </div>
+                    <div class="itemValue">
+                        <input id="UrlInput">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="center">
+            <div class="displaycanvas">
+                <canvas id="displayCanvas" width="400" height="300"></canvas>
+            </div>
+            <div class="itemGroup itemOutput">
+
+                <div class="item">
+                    <div class="itemLabel">
+                        Output
+                    </div>
+                    <div class="itemValue">
+                        <button onclick="LoadText()">Load</button>
+                        <button onclick="Unhide()">Unhide</button>
+                        <button onclick="UpdateDisplay()">Refresh</button>
+                        <button onclick="UploadDisplayData()">Set</button>
+                    </div>
+                </div>
+                <div class="item">   
+                    <div class="itemValue wide">
+                        <textarea readonly class="textarea" id="outputTextarea"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar right" id="OptionsDiv">
+
+        </div>
+    </div>
+
+
+    <script src="scripts.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,96 @@
+/*
+ *   Copyright (c) 2023 Malte Hering
+ *   All rights reserved.
+
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+
+ *   http://www.apache.org/licenses/LICENSE-2.0
+
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
+#ifndef DisplayInput_h
+#define DisplayInput_h
+
+#include <Arduino.h>
+#include "Pins.h"
+#include "Debug.h"
+#include "Settings.h"
+#include "Transient.h"
+#include "State.h"
+
+#include "epd4in2bV2.h"
+
+const char *DisplayInputDrawData PROGMEM  = R"(###t»line¦x»20¦y»23¦x2»20¦y2»300¦c»b¦
+t»line¦x»40¦y»23¦x2»40¦y2»300¦c»b¦
+t»line¦x»60¦y»23¦x2»60¦y2»300¦c»b¦
+t»line¦x»0¦y»23¦x2»60¦y2»23¦c»b¦
+t»line¦x»0¦y»46¦x2»60¦y2»46¦c»b¦
+t»line¦x»0¦y»69¦x2»60¦y2»69¦c»b¦
+t»line¦x»0¦y»92¦x2»60¦y2»92¦c»b¦
+t»line¦x»0¦y»115¦x2»60¦y2»115¦c»b¦
+t»line¦x»0¦y»138¦x2»60¦y2»138¦c»b¦
+t»line¦x»0¦y»162¦x2»60¦y2»162¦c»b¦
+t»line¦x»0¦y»185¦x2»60¦y2»185¦c»b¦
+t»line¦x»0¦y»208¦x2»60¦y2»208¦c»b¦
+t»line¦x»0¦y»231¦x2»60¦y2»231¦c»b¦
+t»line¦x»0¦y»254¦x2»60¦y2»254¦c»b¦
+t»text¦x»0¦y»23¦w»20¦h»23¦c»b¦s»24¦a»cc¦l»A¦
+t»text¦x»0¦y»46¦w»20¦h»23¦c»b¦s»24¦a»cc¦l»B¦
+t»text¦x»0¦y»69¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»C¦
+t»text¦x»0¦y»92¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»D¦
+t»text¦x»0¦y»115¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»E¦
+t»text¦x»0¦y»138¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»F¦
+t»text¦x»0¦y»162¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»G¦
+t»text¦x»0¦y»185¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»H¦
+t»text¦x»0¦y»208¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»I¦
+t»text¦x»0¦y»231¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»J¦
+t»text¦x»0¦y»254¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»K¦
+t»text¦x»0¦y»277¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»L¦
+t»line¦x»0¦y»277¦x2»60¦y2»277¦c»b¦
+t»text¦x»20¦y»23¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»M¦
+t»text¦x»20¦y»46¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»N¦
+t»text¦x»20¦y»69¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»O¦
+t»text¦x»20¦y»92¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»P¦
+t»text¦x»20¦y»115¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»Q¦
+t»text¦x»20¦y»138¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»R¦
+t»text¦x»20¦y»162¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»S¦
+t»text¦x»20¦y»185¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»T¦
+t»text¦x»20¦y»208¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»U¦
+t»text¦x»20¦y»231¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»V¦
+t»text¦x»20¦y»254¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»W¦
+t»text¦x»20¦y»277¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»X¦
+t»text¦x»40¦y»23¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»Y¦
+t»text¦x»40¦y»46¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»Z¦
+t»text¦x»40¦y»69¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»0¦
+t»text¦x»40¦y»92¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»1¦
+t»text¦x»40¦y»115¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»2¦
+t»text¦x»40¦y»138¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»3¦
+t»text¦x»40¦y»162¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»4¦
+t»text¦x»40¦y»185¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»5¦
+t»text¦x»40¦y»208¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»6¦
+t»text¦x»40¦y»231¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»7¦
+t»text¦x»40¦y»254¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»8¦
+t»text¦x»40¦y»277¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»9¦
+t»rect¦x»0¦y»0¦w»20¦h»23¦c»b¦f»1¦
+t»rect¦x»20¦y»0¦w»20¦h»23¦c»b¦f»1¦
+t»rect¦x»40¦y»0¦w»20¦h»23¦c»b¦f»1¦
+t»text¦x»0¦y»0¦w»20¦h»23¦c»w¦s»20¦a»cc¦l»1¦
+t»text¦x»20¦y»0¦w»20¦h»23¦c»w¦s»20¦a»cc¦l»2¦
+t»text¦x»40¦y»0¦w»20¦h»23¦c»w¦s»20¦a»cc¦l»3¦
+t»line¦x»20¦y»0¦x2»20¦y2»23¦c»w¦
+t»line¦x»40¦y»0¦x2»40¦y2»23¦c»w¦
+###)";
+
+void DisplayInputDraw(Paint *DisplayPaintBlack,Paint *DisplayPaintRed) {
+    
+}
+
+
+#endif

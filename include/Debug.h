@@ -24,9 +24,11 @@ bool debug = false;
 
 #define DebugStruct(name) Serial.println(""); Serial.print(#name); Serial.print(": {"); debug=true;  
 #define DebugStructValue(value) if (true) { String name = String(#value); int index = name.indexOf("."); Serial.print(" ");  if (index > 0) { index++; Serial.print(name.substring(index)); } else { Serial.print(name); } Serial.print(":"); Serial.print(value);  debug=true;  }
-#define DebugStructEnd() Serial.print(" }\t"); debug=true;  
+#define DebugStructEnd() Serial.println(" }"); debug=true;  
 
-
+#define DebugProgressStart(text) Serial.println(""); Serial.print(text); Serial.print(":"); debug=true;
+#define DebugProgressUpdate(name) Serial.print("."); debug=true;
+#define DebugProgressEnd(text) Serial.print(">"); Serial.print(text); Serial.print("\t"); debug=true;
 
 #define loopDebug() if (debug) { Serial.println(); debug = false; }
 

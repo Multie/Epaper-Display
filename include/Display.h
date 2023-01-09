@@ -25,11 +25,8 @@
 #include "Transient.h"
 #include "State.h"
 
-#include "Power.h"
 #include "epd4in2bV2.h"
-
-#define COLORED 0
-#define UNCOLORED 1
+#include "Power.h"
 
 // unsigned int resetPin, unsigned int dcPin, unsigned int csPin, unsigned int busyPin,unsigned int Width,unsigned int Height
 Epd epd(DisplayRstPin, DisplayDcPin, DisplayCsPin, DisplayBusyPin, EPD_WIDTH, EPD_HEIGHT);
@@ -39,6 +36,15 @@ unsigned char DisplayImageRed[(EPD_WIDTH * EPD_HEIGHT / 8)] = {};
 
 Paint DisplayPaintBlack(DisplayImageBlack, epd.width, epd.height);
 Paint DisplayPaintRed(DisplayImageRed, epd.width, epd.height);
+
+enum DisplayColor
+{
+    White,
+    Black,
+    Red
+};
+
+#include "Display/DisplayDrawModules.h"
 
 void DisplayDraw()
 {
@@ -87,20 +93,104 @@ void PaintTest()
     }
 }
 
+#ifdef TestWebServer
+uint16_t indexvReal = 0;
+String postData = "";
+bool ClearDisplay = false;
+void DisplaySetupServer()
+{
+    server.on(
+        "/api/display/image",
+        HTTP_GET,
+        [](AsyncWebServerRequest *request)
+        {
+            indexvReal = 0;
+            AsyncWebServerResponse *response = request->beginChunkedResponse(
+                "text/plain",
+                [](uint8_t *buffer, size_t maxLen, size_t index)
+                {
+                    maxLen = maxLen >> 1;
+                    size_t len = 0;
+                    int len1 = DisplayPaintBlack.GetWidth() * DisplayPaintBlack.GetHeight() / 8;
+                    int len2 = len1 * 2;
+
+                    while (len < (maxLen - 20) && indexvReal < (len2))
+                    {
+                        if (indexvReal < len1)
+                        {
+                            len += sprintf(((char *)buffer + len), "%c", DisplayImageBlack[indexvReal]);
+                        }
+                        else
+                        {
+                            len += sprintf(((char *)buffer + len), "%c", DisplayImageRed[indexvReal - len1]);
+                        }
+                        indexvReal++;
+                    }
+                    return len;
+                });
+            response->addHeader("Access-Control-Allow-Origin", "*");
+            response->addHeader("Access-Control-Allow-Methods", "GET, POST");
+            response->addHeader("Access-Control-Allow-Headers", "Content-Type");
+            request->send(response);
+        });
+    server.on(
+        "/api/display/image",
+        HTTP_POST,
+        [](AsyncWebServerRequest *request)
+        {
+            ClearDisplay = true;
+            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "123");
+            response->addHeader("Access-Control-Allow-Origin", "*");
+            response->addHeader("Access-Control-Allow-Methods", "GET, POST");
+            response->addHeader("Access-Control-Allow-Headers", "Content-Type");
+            request->send(response);
+        },
+        NULL,
+        [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
+        {
+            if (index == 0)
+            {
+                postData = "";
+            }
+            for (int a = 0; a < len; a++)
+            {
+                postData += String((char)data[a]);
+            }
+            if (index + len == total)
+            {
+                AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", postData);
+                response->addHeader("Access-Control-Allow-Origin", "*");
+                response->addHeader("Access-Control-Allow-Methods", "GET, POST");
+                response->addHeader("Access-Control-Allow-Headers", "Content-Type");
+                request->send(response);
+            }
+        });
+}
+#endif
+
 void DisplayStartup()
 {
     State.Display.Sleep = false;
+#ifdef TestWebServer
+    DisplaySetupServer();
+#endif
+    DisplayParseText("t»rect¦x»10¦y»10¦w»20¦h»20¦f»1¦c»b¦\nt»rect¦x»30¦y»10¦w»20¦h»20¦f»1¦c»r¦");
+    // DisplayParseText("t»pixel¦x»0¦y»0¦c»b¦\nt»circle¦x»0¦y»0¦r»0¦c»b¦\nt»line¦x1»0¦y1»0¦x2»0¦y2»0¦c»b¦\nt»rect¦x»0¦y»0¦w»0¦h»0¦c»b¦\nt»text¦x»0¦y»0¦w»0¦h»0¦c»b¦s»16¦a»cc¦l»¦\nt»value¦x»0¦y»0¦w»0¦h»0¦c»b¦s»16¦a»cc¦v»¦\nt»image¦x»0¦y»0¦w»0¦h»0¦c»b¦n»¦");
+    DisplayToImage();
 }
 
 void DisplayWakeup()
 {
     State.Display.Sleep = false;
+#ifdef TestWebServer
+    DisplaySetupServer();
+#endif
 }
 
 void DisplayUpdate()
 {
-    PaintTest();
-
+    // PaintTest();
+    // Debug("Update", "Display");
     if (State.Buttons.Button1)
     {
         State.Buttons.Button1 = false;
@@ -108,6 +198,22 @@ void DisplayUpdate()
         DisplayPaintRed.Clear(UNCOLORED);
         DisplayDraw();
     }
+#ifdef TestWebServer
+    else if (postData.length() > 0)
+    {
+        DisplayPaintBlack.Clear(UNCOLORED);
+        DisplayPaintRed.Clear(UNCOLORED);
+        DisplayParseText(postData);
+        postData = "";
+    }
+    else if (ClearDisplay) {
+        ClearDisplay = false;
+         DisplayPaintBlack.Clear(UNCOLORED);
+        DisplayPaintRed.Clear(UNCOLORED);
+        postData = "";
+    }
+
+#endif
 }
 
 void DisplayShutdown()

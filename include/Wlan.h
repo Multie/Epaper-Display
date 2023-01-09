@@ -29,21 +29,28 @@
 
 bool connectWifi()
 {
-    if (!State.Wifi.Connected )
+    if (!State.Wifi.Connected)
     {
+        DebugProgressStart("Wifi Connect " + String(Settings.Wifi.Ssid));
         WiFi.mode(WIFI_STA);
         String ssid = String(Settings.Wifi.Ssid);
         String password = String(Settings.Wifi.Password);
 
         WiFi.begin(ssid.c_str(), password.c_str());
         int trys = Settings.Wifi.ConnectionTrys;
-        for (int a=0; a < trys;a++) {
-            if (WiFi.status() == WL_CONNECTED) {
+
+        for (int a = 0; a < trys; a++)
+        {
+            DebugProgressUpdate();
+            if (WiFi.status() == WL_CONNECTED)
+            {
                 State.Wifi.Connected = true;
+                DebugProgressEnd(WiFi.localIP());
                 return true;
             }
             delay(500);
         }
+        DebugProgressEnd("Fail");
         return false;
     }
     return true;

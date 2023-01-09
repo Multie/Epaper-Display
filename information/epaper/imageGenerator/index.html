@@ -1,0 +1,187 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Epaper Test</title>
+    <meta name="description" content="A simple HTML5 Template for new projects.">
+    <meta name="author" content="SitePoint">
+
+    <link rel="stylesheet" href="styles.css">
+
+</head>
+
+<body>
+    <!-- your content here... -->
+    <div class="root">
+        <div class="sidebar">
+            <div class="item">
+                <div class="itemLabel">
+                    Width
+                </div>
+                <input id="inputwidth" class="itemValue" type="number" value="32" min="1"
+                    onchange="createImageEditor()">
+
+            </div>
+            <div class="item">
+                <div class="itemLabel">
+                    Height
+                </div>
+                <input id="inputheight" class="itemValue" type="number" value="32" min="1"
+                    onchange="createImageEditor()">
+            </div>
+            <div class="item">
+                <div class="itemLabel">
+                    Image
+                </div>
+                <textarea id="imageHex" class="itemValue optionsImageHex"
+                    onchange="onChangeImageBinTexArea()"></textarea>
+            </div>
+        </div>
+        <div class="imageEditor">
+            <div id="imageEditor" class="imageEditorArea">
+            </div>
+        </div>
+        <div class="sidebar">
+            <!-- Redraw -->
+            <div class="item">
+                <button class="itemLabel" onclick="image.drawImage()">Redraw</button>
+            </div>
+            <!-- Pixel -->
+            <div class="item">
+                <input type="radio" name="tool" value="drawpixel" checked="true">
+                <div class="itemLabel">
+                    Draw Pixel
+                </div>
+            </div>
+            <div class="line"></div>
+            <!-- Line -->
+            <div class="item">
+                <input type="radio" name="tool" value="line">
+                <div class="itemLabel">
+                    Line
+                </div>
+                <button class="itemValue" onclick="tools.line.draw(tools.line)">Draw</button>
+            </div>
+            <div class="item ">
+                <div class="itemLabel">
+                    Start X
+                </div>
+                <input class="itemValue" type="number" min="0" value="0" id="lineStartX"
+                    onchange="(function(event){tools.line.start.x = parseInt(event.srcElement.value);tools.line.click(tools.line,{type:'manuel'})})(event)">
+            </div>
+            <div class="item ">
+                <div class="itemLabel">
+                    Start Y
+                </div>
+                <input class="itemValue" type="number" min="0" value="0" id="lineStartY"
+                    onchange="(function(event){tools.line.start.y = parseInt(event.srcElement.value);tools.line.click(tools.line,{type:'manuel'})})(event)">
+            </div>
+            <div class="item ">
+                <div class="itemLabel">
+                    End X
+                </div>
+                <input class="itemValue" type="number" min="0" value="0" id="lineEndX"
+                    onchange="(function(event){tools.line.end.x = parseInt(event.srcElement.value);tools.line.click(tools.line,{type:'manuel'})})(event)">
+            </div>
+            <div class="item ">
+                <div class="itemLabel">
+                    End Y
+                </div>
+                <input class="itemValue" type="number" min="0" value="0" id="lineEndY"
+                    onchange="(function(event){tools.line.end.y = parseInt(event.srcElement.value);tools.line.click(tools.line,{type:'manuel'})})(event)">
+            </div>
+            <div class="line"></div>
+            <!-- Circle -->
+            <div class="item">
+                <input type="radio" name="tool" value="circle">
+                <div class="itemLabel">
+                    Circle
+                </div>
+                <button class="itemValue" onclick="tools.circle.draw(tools.circle)">Draw</button>
+            </div>
+            <div class="item ">
+                <div class="itemLabel">
+                    Radius
+                </div>
+                <input class="itemValue" type="number" min="1" value="1" id="circleRadius"
+                    onchange="(function(event){tools.circle.radius = parseInt(event.srcElement.value);tools.circle.click(tools.circle,{type:'manuel'})})(event)">
+            </div>
+            <div class="item ">
+                <div class="itemLabel">
+                    End X
+                </div>
+                <input class="itemValue" type="number" min="0" value="0" id="circleCenterX"
+                    onchange="(function(event){tools.circle.center.x = parseInt(event.srcElement.value);tools.circle.click(tools.circle,{type:'manuel'})})(event)">
+            </div>
+            <div class="item ">
+                <div class="itemLabel">
+                    End Y
+                </div>
+                <input class="itemValue" type="number" min="0" value="0" id="circleCenterY"
+                    onchange="(function(event){tools.circle.center.y = parseInt(event.srcElement.value);tools.circle.click(tools.circle,{type:'manuel'})})(event)">
+            </div>
+            <div class="item ">
+                <div class="itemLabel">
+                    Fill
+                </div>
+                <input class="itemValue" type="checkbox" id="circleFill"
+                    onchange="(function(event){console.log('check',event); tools.circle.fill = (event.srcElement.checked);tools.circle.click(tools.circle,{type:'manuel'})})(event)">
+            </div>
+            <div class="line"></div>
+            <!-- Line -->
+            <div class="item">
+                <input type="radio" name="tool" value="rectangle">
+                <div class="itemLabel">
+                    Rectangle
+                </div>
+                <button class="itemValue" onclick="tools.rectangle.draw(tools.rectangle)">Draw</button>
+            </div>
+            <div class="item ">
+                <div class="itemLabel">
+                    Start X
+                </div>
+                <input class="itemValue" type="number" min="0" value="0" id="rectangleStartX"
+                    onchange="(function(event){tools.rectangle.start.x = parseInt(event.srcElement.value);tools.rectangle.click(tools.rectangle,{type:'manuel'})})(event)">
+            </div>
+            <div class="item ">
+                <div class="itemLabel">
+                    Start Y
+                </div>
+                <input class="itemValue" type="number" min="0" value="0" id="rectangleStartY"
+                    onchange="(function(event){tools.rectangle.start.y = parseInt(event.srcElement.value);tools.rectangle.click(tools.rectangle,{type:'manuel'})})(event)">
+            </div>
+            <div class="item ">
+                <div class="itemLabel">
+                    End X
+                </div>
+                <input class="itemValue" type="number" min="0" value="0" id="rectangleEndX"
+                    onchange="(function(event){tools.rectangle.end.x = parseInt(event.srcElement.value);tools.rectangle.click(tools.rectangle,{type:'manuel'})})(event)">
+            </div>
+            <div class="item ">
+                <div class="itemLabel">
+                    End Y
+                </div>
+                <input class="itemValue" type="number" min="0" value="0" id="rectangleEndY"
+                    onchange="(function(event){tools.rectangle.end.y = parseInt(event.srcElement.value);tools.rectangle.click(tools.rectangle,{type:'manuel'})})(event)">
+            </div>
+            <div class="item ">
+                <div class="itemLabel">
+                    Fill
+                </div>
+                <input class="itemValue" type="checkbox" id="rectangleFill"
+                    onchange="(function(event){console.log('check',event); tools.rectangle.fill = (event.srcElement.checked);tools.rectangle.click(tools.rectangle,{type:'manuel'})})(event)">
+            </div>
+            <div class="line"></div>
+        </div>
+    </div>
+
+
+
+    <script src="scripts.js"></script>
+</body>
+
+</html>

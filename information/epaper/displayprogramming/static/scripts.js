@@ -1,0 +1,1038 @@
+/*
+ *   Copyright (c) 2023 Malte Hering
+ *   All rights reserved.
+
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+
+ *   http://www.apache.org/licenses/LICENSE-2.0
+
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+var baseurl = "";
+
+function getData(path) {
+    return new Promise((resolve, reject) => {
+        const req = new XMLHttpRequest();
+        req.addEventListener("load", () => {
+            resolve(req.responseText);
+        });
+        req.open("GET", baseurl + path);
+        req.send();
+    });
+}
+
+function getData(path, consume) {
+    return new Promise((resolve, reject) => {
+        fetch(baseurl + path)
+            .then(res => {
+                consume(res.body.getReader())
+            }).then(() => {
+                console.log("consumed the entire body without keeping the whole thing in memory!");
+                resolve()
+            }).catch(e => {
+                console.log("something went wrong: " + e);
+                reject(e);
+            });
+        /*
+                const req = new XMLHttpRequest();
+                req.addEventListener("load", () => {
+                    resolve(req.responseText);
+                });
+        
+                req.addEventListener("progress", (ev) => {
+                    console.log(ev, this.responseText);
+                    callback(ev);
+        
+                });
+                req.open("GET", baseurl + path);
+                req.send();*/
+    });
+}
+
+function postData(path, text) {
+    return new Promise((resolve, reject) => {
+        const req = new XMLHttpRequest();
+        req.addEventListener("load", () => {
+            resolve(req.responseText);
+        });
+        req.open("POST", baseurl + path);
+        req.send(text);
+    });
+}
+
+class DisplayOption {
+    constructor() {
+        this.name = "";
+        this.options = {};
+        this.id = Date.now() + "#" + Math.round(Math.random() * 10000).toString().padStart(5, "0");
+        this.type = "---";
+        this.hide = false;
+    }
+
+    getOutputValue(name, value) {
+        // console.log(name + String.fromCharCode(187) + value + String.fromCharCode(166))
+        return name + String.fromCharCode(187) + value.toString() + String.fromCharCode(166)
+    }
+    getOutput() {
+        let out = ""
+        out += this.getOutputValue("t", this.type);
+
+        let keys = Object.keys(this.options);
+        console.log(this.options);
+        keys.forEach(key => {
+            out += this.getOutputValue(key, this.options[key].value.toString());
+        });
+
+        return out;
+    }
+
+
+    createContentHtml(parrent) {
+        let keys = Object.keys(this.options);
+
+        let itemroot = document.createElement("div");
+        itemroot.classList.add("itemGroup")
+        itemroot.id = this.id;
+        parrent.appendChild(itemroot);
+        if (true) {
+            let item = document.createElement("div");
+            item.classList.add("item");
+            itemroot.appendChild(item);
+            let label = document.createElement("div");
+            label.classList.add("itemLabel");
+            label.innerHTML = this.name;
+            item.appendChild(label);
+            let value = document.createElement("div");
+            value.classList.add("itemValue");
+            let removebutton = document.createElement("button");
+            removebutton.innerHTML = "Remove"
+            removebutton.setAttribute("name", this.id);
+            removebutton.onclick = ((ev) => {
+                // get rid of html
+                let id = ev.originalTarget.getAttribute("name");
+                let itemroot = document.getElementById(id);
+                itemroot.remove();
+                // get rid of array element
+                let index = display.content.findIndex((element) => {
+                    return element.id == id;
+                });
+                if (index >= 0) {
+                    display.content.splice(index, 1);
+                    display.createOutput();
+                }
+
+            })
+            value.appendChild(removebutton);
+            let hidebutton = document.createElement("button");
+            hidebutton.innerHTML = "Hide"
+            hidebutton.setAttribute("name", this.id);
+            hidebutton.onclick = ((ev) => {
+                // get rid of html
+                let id = ev.originalTarget.getAttribute("name");
+                let itemroot = document.getElementById(id);
+                itemroot.remove();
+                let element = display.content.find((element) => {
+                    return element.id == id;
+                });
+                element.hide = true;
+            })
+            value.appendChild(hidebutton);
+
+            item.appendChild(value);
+        }
+
+        keys.forEach(key => {
+            let option = this.options[key];
+            let item = document.createElement("div");
+            item.classList.add("item");
+            itemroot.appendChild(item);
+            let label = document.createElement("div");
+            label.classList.add("itemLabel");
+            label.innerHTML = option.name;
+            item.appendChild(label);
+            let value = document.createElement("div");
+            value.classList.add("itemValue");
+            item.appendChild(value);
+            let input = null;
+            if (option.type == "number") {
+                input = document.createElement("input");
+                input.type = "number";
+                input.value = option.value;
+                input.onchange = ((ev) => {
+                    let key = ev.originalTarget.getAttribute("name");
+                    let option = this.options[key];
+                    if (option.min != null || option.min != undefined) {
+                        if (ev.originalTarget.value < option.min) {
+                            ev.originalTarget.value = option.min;
+                        }
+                    }
+                    if (option.max != null || option.max != undefined) {
+                        if (ev.originalTarget.value > option.max) {
+                            ev.originalTarget.value = option.max;
+                        }
+                    }
+                    option.value = parseFloat(ev.originalTarget.value);
+
+                    display.createOutput();
+                });
+                if (option.min != null || option.min != undefined) {
+                    input.min = option.min;
+                }
+                if (option.max != null || option.max != undefined) {
+                    input.max = option.max;
+                }
+            }
+            else if (option.type == "text") {
+                input = document.createElement("input");
+                input.type = "text";
+                input.value = option.value;
+                input.onchange = ((ev) => {
+                    let key = ev.originalTarget.getAttribute("name");
+                    this.options[key].value = ev.originalTarget.value;
+                    display.createOutput();
+                });
+            }
+            else if (option.type == "select") {
+                input = document.createElement("select");
+                option.options.forEach(element => {
+                    let opt = document.createElement("option");
+                    opt.value = element.value;
+                    opt.innerHTML = element.label;
+                    input.appendChild(opt);
+                });
+                input.onchange = ((ev) => {
+                    let key = ev.originalTarget.getAttribute("name");
+                    this.options[key].value = ev.originalTarget.value;
+                    display.createOutput();
+                });
+                input.value = option.value;
+            }
+            else if (option.type == "checkbox") {
+                input = document.createElement("input");
+                input.type = "checkbox";
+                input.checked = option.value == option.true;
+                input.onchange = (ev => {
+                    let key = ev.originalTarget.getAttribute("name");
+
+                    this.options[key].value = ev.originalTarget.checked ? this.options[key].true : this.options[key].false;
+                    console.log("change", this.options[key].value);
+                    display.createOutput();
+                });
+            }
+            if (input) {
+                input.id = this.id + "_" + key;
+                input.setAttribute("name", key);
+                value.appendChild(input);
+            }
+        });
+
+
+    }
+
+    createOptionsHtml(parrent) {
+        let itemroot = document.createElement("div");
+        itemroot.classList.add("itemGroup")
+        itemroot.id = this.id;
+        parrent.appendChild(itemroot);
+
+        let item = document.createElement("div");
+        item.classList.add("item");
+        itemroot.appendChild(item);
+
+        let label = document.createElement("div");
+        label.classList.add("itemLabel");
+        label.innerHTML = this.name;
+        item.appendChild(label);
+
+        let value = document.createElement("div");
+        value.classList.add("itemValue");
+        item.appendChild(value);
+
+        let button = document.createElement("button");
+        button.innerHTML = "Add";
+        button.setAttribute("type", this.type);
+        button.onclick = ((ev) => {
+            let button = ev.originalTarget;
+            let type = button.getAttribute("type");
+            display.addContent(type);
+        });
+        value.appendChild(button);
+
+    }
+    clone() {
+        return new DisplayOption();
+    }
+
+
+}
+
+class DisplayOptionPixel extends DisplayOption {
+    constructor() {
+        super();
+        this.name = "Pixel";
+        this.type = "pixel";
+        this.options = {
+            x: {
+                type: "number",
+                name: "X",
+                min: 0,
+                max: 400,
+                value: 0
+            },
+            y: {
+                type: "number",
+                name: "Y",
+                min: 0,
+                max: 300,
+                value: 0
+            },
+            c: {
+                type: "select",
+                name: "Color",
+                options: [
+                    { label: "Black", value: "b" },
+                    { label: "Red", value: "r" },
+                    { label: "White", value: "w" },
+                ],
+                value: "b"
+            }
+        }
+    }
+    clone() {
+        return new DisplayOptionPixel();
+    }
+}
+class DisplayOptionLine extends DisplayOption {
+    constructor() {
+        super();
+        this.name = "Line";
+        this.type = "line";
+
+        this.options = {
+            x: {
+                type: "number",
+                name: "Start X",
+                min: 0,
+                max: 400,
+                value: 0
+            },
+            y: {
+                type: "number",
+                name: "Start Y",
+                min: 0,
+                max: 300,
+                value: 0
+            },
+            x2: {
+                type: "number",
+                name: "End X",
+                min: 0,
+                max: 400,
+                value: 0
+            },
+            y2: {
+                type: "number",
+                name: "End Y",
+                min: 0,
+                max: 300,
+                value: 0
+            },
+            c: {
+                type: "select",
+                name: "Color",
+                options: [
+                    { label: "Black", value: "b" },
+                    { label: "Red", value: "r" },
+                    { label: "White", value: "w" },
+                ],
+                value: "b"
+            }
+        }
+    }
+    clone() {
+        return new DisplayOptionLine();
+    }
+
+
+}
+class DisplayOptionCircle extends DisplayOption {
+    constructor() {
+        super();
+        this.name = "Circle";
+        this.type = "circle";
+        this.options = {
+            x: {
+                type: "number",
+                name: "X",
+                min: 0,
+                max: 400,
+                value: 0
+            },
+            y: {
+                type: "number",
+                name: "Y",
+                min: 0,
+                max: 300,
+                value: 0
+            },
+            r: {
+                type: "number",
+                name: "Radius",
+                min: 0,
+                value: 0
+            },
+            c: {
+                type: "select",
+                name: "Color",
+                options: [
+                    { label: "Black", value: "b" },
+                    { label: "Red", value: "r" },
+                    { label: "White", value: "w" },
+                ],
+                value: "b"
+            },
+            f: {
+                type: "checkbox",
+                name: "Fill",
+                value: "0",
+                true: "1",
+                false: "0"
+            }
+        }
+    }
+    clone() {
+        return new DisplayOptionCircle();
+    }
+}
+class DisplayOptionRectangle extends DisplayOption {
+    constructor() {
+        super();
+        this.name = "Rectangle";
+        this.type = "rect";
+        this.options = {
+            x: {
+                type: "number",
+                name: "X",
+                min: 0,
+                max: 400,
+                value: 0
+            },
+            y: {
+                type: "number",
+                name: "Y",
+                min: 0,
+                max: 300,
+                value: 0
+            },
+            w: {
+                type: "number",
+                name: "Width",
+                min: 0,
+                max: 400,
+                value: 0
+            },
+            h: {
+                type: "number",
+                name: "Height",
+                min: 0,
+                max: 300,
+                value: 0
+            },
+            c: {
+                type: "select",
+                name: "Color",
+                options: [
+                    { label: "Black", value: "b" },
+                    { label: "Red", value: "r" },
+                    { label: "White", value: "w" },
+                ],
+                value: "b"
+            },
+            f: {
+                type: "checkbox",
+                name: "Fill",
+                value: "0",
+                true: "1",
+                false: "0"
+            }
+        };
+    }
+    clone() {
+        return new DisplayOptionRectangle();
+    }
+}
+class DisplayOptionText extends DisplayOption {
+    constructor() {
+        super();
+        this.name = "Text";
+        this.type = "text";
+        this.options = {
+            x: {
+                type: "number",
+                name: "Start X",
+                min: 0,
+                max: 400,
+                value: 0
+            },
+            y: {
+                type: "number",
+                name: "Start Y",
+                min: 0,
+                max: 300,
+                value: 0
+            },
+            w: {
+                type: "number",
+                name: "Width",
+                min: 0,
+                max: 400,
+                value: 0
+            },
+            h: {
+                type: "number",
+                name: "Height",
+                min: 0,
+                max: 300,
+                value: 0
+            },
+            c: {
+                type: "select",
+                name: "Color",
+                options: [
+                    { label: "Black", value: "b" },
+                    { label: "Red", value: "r" },
+                    { label: "White", value: "w" },
+                ],
+                value: "b"
+            },
+            s: {
+                type: "select",
+                name: "Text Size",
+                options: [
+                    { label: "8px", value: "b" },
+                    { label: "12px", value: "12" },
+                    { label: "16px", value: "16" },
+                    { label: "20px", value: "20" },
+                    { label: "24px", value: "24" },
+                ],
+                value: "16"
+            },
+            a: {
+                type: "select",
+                name: "Text Align",
+                options: [
+                    { label: "Top Left", value: "tl" },
+                    { label: "Top Center", value: "tc" },
+                    { label: "Top Right", value: "tr" },
+                    { label: "Center Left", value: "cl" },
+                    { label: "Center Center", value: "cc" },
+                    { label: "Center Right", value: "cr" },
+                    { label: "Bottom Left", value: "bl" },
+                    { label: "Bottom Center", value: "bc" },
+                    { label: "Bottom Right", value: "br" },
+                ],
+                value: "cc"
+            },
+            l: {
+                type: "text",
+                name: "Text",
+                value: ""
+            }
+        };
+    }
+    clone() {
+        return new DisplayOptionText();
+    }
+}
+class DisplayOptionValue extends DisplayOption {
+    constructor() {
+        super();
+        this.name = "Value";
+        this.type = "value";
+        this.options = {
+            x: {
+                type: "number",
+                name: "Start X",
+                min: 0,
+                max: 400,
+                value: 0
+            },
+            y: {
+                type: "number",
+                name: "Start Y",
+                min: 0,
+                max: 300,
+                value: 0
+            },
+            w: {
+                type: "number",
+                name: "Width",
+                min: 0,
+                max: 400,
+                value: 0
+            },
+            h: {
+                type: "number",
+                name: "Height",
+                min: 0,
+                max: 300,
+                value: 0
+            },
+            c: {
+                type: "select",
+                name: "Color",
+                options: [
+                    { label: "Black", value: "b" },
+                    { label: "Red", value: "r" },
+                    { label: "White", value: "w" },
+                ],
+                value: "b"
+            },
+            s: {
+                type: "select",
+                name: "Text Size",
+                options: [
+                    { label: "8px", value: "8" },
+                    { label: "12px", value: "12" },
+                    { label: "16px", value: "16" },
+                    { label: "20px", value: "20" },
+                    { label: "24px", value: "24" },
+                ],
+                value: "16"
+            },
+            a: {
+                type: "select",
+                name: "Text Align",
+                options: [
+                    { label: "Top Left", value: "tl" },
+                    { label: "Top Center", value: "tc" },
+                    { label: "Top Right", value: "tr" },
+                    { label: "Center Left", value: "cl" },
+                    { label: "Center Center", value: "cc" },
+                    { label: "Center Right", value: "cr" },
+                    { label: "Bottom Left", value: "bl" },
+                    { label: "Bottom Center", value: "bc" },
+                    { label: "Bottom Right", value: "br" },
+                ],
+                value: "cc"
+            },
+            v: {
+                type: "text",
+                name: "Name",
+                value: ""
+            }
+        };
+    }
+    clone() {
+        return new DisplayOptionValue();
+    }
+}
+class DisplayOptionImage extends DisplayOption {
+    constructor() {
+        super();
+        this.name = "Image";
+        this.type = "image";
+        this.options = {
+            x: {
+                type: "number",
+                name: "Start X",
+                min: 0,
+                max: 400,
+                value: 0
+            },
+            y: {
+                type: "number",
+                name: "Start Y",
+                min: 0,
+                max: 300,
+                value: 0
+            },
+            w: {
+                type: "number",
+                name: "Width",
+                min: 0,
+                max: 400,
+                value: 0
+            },
+            h: {
+                type: "number",
+                name: "Height",
+                min: 0,
+                max: 300,
+                value: 0
+            },
+            c: {
+                type: "select",
+                name: "Color",
+                options: [
+                    { label: "Black", value: "b" },
+                    { label: "Red", value: "r" },
+                    { label: "White", value: "w" },
+                ],
+                value: "b"
+            },
+            n: {
+                type: "text",
+                name: "Name",
+                value: ""
+            },
+        };
+    }
+
+    clone() {
+        return new DisplayOptionImage();
+    }
+}
+class Display {
+    constructor() {
+        this.options = [
+            new DisplayOptionPixel(),
+            new DisplayOptionCircle(),
+            new DisplayOptionLine(),
+            new DisplayOptionRectangle(),
+            new DisplayOptionText(),
+            new DisplayOptionValue(),
+            new DisplayOptionImage(),
+        ];
+        this.content = [
+
+        ];
+        this.text = "";
+
+        this.outputTextarea = document.getElementById("outputTextarea");
+        this.outputTextarea.value = `t»line¦x»20¦y»23¦x2»20¦y2»300¦c»b¦
+t»line¦x»40¦y»23¦x2»40¦y2»300¦c»b¦
+t»line¦x»60¦y»23¦x2»60¦y2»300¦c»b¦
+t»line¦x»0¦y»23¦x2»60¦y2»23¦c»b¦
+t»line¦x»0¦y»46¦x2»60¦y2»46¦c»b¦
+t»line¦x»0¦y»69¦x2»60¦y2»69¦c»b¦
+t»line¦x»0¦y»92¦x2»60¦y2»92¦c»b¦
+t»line¦x»0¦y»115¦x2»60¦y2»115¦c»b¦
+t»line¦x»0¦y»138¦x2»60¦y2»138¦c»b¦
+t»line¦x»0¦y»162¦x2»60¦y2»162¦c»b¦
+t»line¦x»0¦y»185¦x2»60¦y2»185¦c»b¦
+t»line¦x»0¦y»208¦x2»60¦y2»208¦c»b¦
+t»line¦x»0¦y»231¦x2»60¦y2»231¦c»b¦
+t»line¦x»0¦y»254¦x2»60¦y2»254¦c»b¦
+t»text¦x»0¦y»23¦w»20¦h»23¦c»b¦s»24¦a»cc¦l»A¦
+t»text¦x»0¦y»46¦w»20¦h»23¦c»b¦s»24¦a»cc¦l»B¦
+t»text¦x»0¦y»69¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»C¦
+t»text¦x»0¦y»92¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»D¦
+t»text¦x»0¦y»115¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»E¦
+t»text¦x»0¦y»138¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»F¦
+t»text¦x»0¦y»162¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»G¦
+t»text¦x»0¦y»185¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»H¦
+t»text¦x»0¦y»208¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»I¦
+t»text¦x»0¦y»231¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»J¦
+t»text¦x»0¦y»254¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»K¦
+t»text¦x»0¦y»277¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»L¦
+t»line¦x»0¦y»277¦x2»60¦y2»277¦c»b¦
+t»text¦x»20¦y»23¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»M¦
+t»text¦x»20¦y»46¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»N¦
+t»text¦x»20¦y»69¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»O¦
+t»text¦x»20¦y»92¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»P¦
+t»text¦x»20¦y»115¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»Q¦
+t»text¦x»20¦y»138¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»R¦
+t»text¦x»20¦y»162¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»S¦
+t»text¦x»20¦y»185¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»T¦
+t»text¦x»20¦y»208¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»U¦
+t»text¦x»20¦y»231¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»V¦
+t»text¦x»20¦y»254¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»W¦
+t»text¦x»20¦y»277¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»X¦
+t»text¦x»40¦y»23¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»Y¦
+t»text¦x»40¦y»46¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»Z¦
+t»text¦x»40¦y»69¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»0¦
+t»text¦x»40¦y»92¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»1¦
+t»text¦x»40¦y»115¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»2¦
+t»text¦x»40¦y»138¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»3¦
+t»text¦x»40¦y»162¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»4¦
+t»text¦x»40¦y»185¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»5¦
+t»text¦x»40¦y»208¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»6¦
+t»text¦x»40¦y»231¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»7¦
+t»text¦x»40¦y»254¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»8¦
+t»text¦x»40¦y»277¦w»20¦h»23¦c»b¦s»20¦a»cc¦l»9¦
+t»rect¦x»0¦y»0¦w»20¦h»23¦c»b¦f»1¦
+t»rect¦x»20¦y»0¦w»20¦h»23¦c»b¦f»1¦
+t»rect¦x»40¦y»0¦w»20¦h»23¦c»b¦f»1¦
+t»text¦x»0¦y»0¦w»20¦h»23¦c»w¦s»20¦a»cc¦l»1¦
+t»text¦x»20¦y»0¦w»20¦h»23¦c»w¦s»20¦a»cc¦l»2¦
+t»text¦x»40¦y»0¦w»20¦h»23¦c»w¦s»20¦a»cc¦l»3¦
+t»line¦x»20¦y»0¦x2»20¦y2»23¦c»w¦
+t»line¦x»40¦y»0¦x2»40¦y2»23¦c»w¦`;
+
+        this.canvas = document.getElementById("displayCanvas");
+        this.ctx = this.canvas.getContext("2d");
+
+        this.drawId = this.ctx.createImageData(1, 1); // only do this once per page
+        this.drawData = this.drawId.data;                        // only do this once per page
+    }
+
+    addContent(type) {
+        let option = this.options.find((opt) => {
+            return opt.type == type;
+        });
+        if (option) {
+            this.content.push(option.clone());
+            this.createContentHtml();
+        }
+        display.createOutput();
+    }
+
+    createOutput() {
+        this.text = "";
+        this.content.forEach((element) => {
+            this.text += element.getOutput() + "\n";
+        });
+        this.outputTextarea.value = this.text;
+    }
+
+    loadFromTextBox() {
+        let text = this.outputTextarea.value;
+        let lines = text.split("\n");
+        let content = [];
+        lines.forEach(line => {
+            let segments = line.split("¦");
+            let obj = {};
+            segments.forEach(element => {
+                let split = element.split("»");
+                if (split.length == 2) {
+                    let key = split[0];
+                    let value = split[1];
+                    obj[key] = value;
+                }
+            });
+            content.push(obj);
+        });
+
+
+        content = content.map((element) => {
+
+            if (element.t == null || element.t == undefined) {
+                return null;
+            }
+
+            let option = this.options.find((opt) => {
+                return opt.type == element.t;
+            });
+
+            if (!option) {
+                return null;
+            }
+            let instance = option.clone();
+            let keys = Object.keys(instance.options);
+            keys.forEach(key => {
+                if (element[key] != null && element[key] != undefined) {
+                    console.log("set Option", key)
+                    instance.options[key].value = element[key];
+                }
+            });
+            console.log(element, instance.options);
+            return instance;
+        }).filter((element) => {
+
+            return element != null;
+        });
+
+        this.content = this.content.concat(content);
+        this.createContentHtml();
+        this.createOutput();
+    }
+
+    createContentHtml() {
+        let OptionsDiv = document.getElementById("OptionsDiv");
+        OptionsDiv.innerHTML = "";
+        display.content.forEach(option => {
+            if (!option.hide) {
+                option.createContentHtml(OptionsDiv);
+            }
+
+        });
+    }
+
+    createOptionsHtml() {
+        let OptionsDiv = document.getElementById("OptionsAddDiv");
+        display.options.forEach(option => {
+
+            option.createOptionsHtml(OptionsDiv);
+
+
+        });
+    }
+
+    setDisplay() {
+        console.log("text",this.text);
+        return postData("/api/display/image", this.text);
+
+        return new Promise((resolve) => { resolve() });
+    }
+    updateDisplay() {
+        return new Promise((resolve) => {
+
+
+            this.drawData[0] = 0; // R
+            this.drawData[1] = 255; // G
+            this.drawData[2] = 0; // B
+            this.drawData[3] = 100; // A
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            getData("/api/display/image", (reader) => {
+                var total = 0
+                var x = 0;
+                var y = 0;
+                var width = 400;
+                var height = 300;
+                var bytesize = 8;
+                display.drawData[0] = 0; // R
+                display.drawData[1] = 0; // G
+                display.drawData[2] = 0; // B
+                display.drawData[3] = 255; // A
+                return pump()
+                function pump() {
+                    return reader.read().then(({ done, value }) => {
+                        if (done) {
+
+                            return;
+                        }
+                        for (let a = 0; a < value.byteLength; a++) {
+                            let byte = value[a];
+                            if (total == width * height / bytesize) {
+                                x = 0;
+                                y = 0;
+                                display.drawData[0] = 255; // R
+                                display.drawData[1] = 0; // G
+                                display.drawData[2] = 0; // B
+                                display.drawData[3] = 255; // A
+                                console.log("Switch to red");
+                            }
+                            for (let b = (bytesize - 1); b >= 0; b--) {
+
+                                if ((byte & 1 << b) != 0) {
+                                    display.ctx.putImageData(display.drawId, x, y);
+                                }
+                                x++;
+                                if (x >= 400) {
+                                    x = 0;
+                                    y++;
+                                }
+
+                            }
+                            total++;
+                        }
+                        console.log(`received ${value.byteLength} bytes (${total} bytes in total)`)
+
+
+                        return pump()
+                    })
+                }
+            }).then(() => {
+                resolve();
+            }, (err) => {
+                resolve();
+            });
+
+
+
+            /*
+             getData("/api/display/image").then((text) => {
+     
+                 //let text = testData;
+                 var width = 400;
+                 var height = 300;
+                 var bytesize = 8;
+     
+                 
+                 let len1 = width * height / bytesize;
+     
+                 let x = 0;
+                 let y = 0;
+     
+     
+                 for (let a = 0; a < len1; a++) {
+                     let byte = text.charCodeAt(a);
+     
+                     for (let b = (bytesize - 1); b >= 0; b--) {
+                         console.log("tt", x, y, b, a, byte, (byte & 1 << b) != 0);
+                         if ((byte & 1 << b) != 0) {
+                             this.ctx.putImageData(this.drawId, x, y);
+     
+                         }
+                         x++;
+                         if (x >= 400) {
+                             x = 0;
+                             y++;
+                         }
+                         if (x == width && y == height) {
+                             break;
+                         }
+                     }
+                 }
+                 x = 0;
+                 y = 0;
+     
+                 this.drawData[0] = 255; // R
+                 this.drawData[1] = 0; // G
+                 this.drawData[2] = 0; // B
+                 this.drawData[3] = 1; // A
+                 //ctx.putImageData(this.drawId, x, y);
+             });
+             //*/
+        })
+    }
+
+
+}
+
+var display = new Display();
+function UploadDisplayData() {
+    display.setDisplay().then(() => {
+        setTimeout(() => {
+            display.updateDisplay();
+        }, 1500);
+    });
+}
+function UpdateDisplay() {
+    display.updateDisplay();
+}
+function Unhide() {
+    display.content.forEach((element) => {
+        element.hide = false;
+    });
+    display.createContentHtml();
+}
+
+function LoadText() {
+    display.loadFromTextBox();
+}
+
+window.onload = (() => {
+
+    baseurl = "http://192.168.0.94";
+    console.log(display);
+
+    display.createOptionsHtml();
+    display.createContentHtml();
+    // display.updateDisplay();
+
+    let urlInput = document.getElementById("UrlInput");
+    if (urlInput.value.length == 0) {
+        urlInput.value = baseurl;
+    }
+    else {
+        baseurl = urlInput.value;
+    }
+
+    urlInput.onchange = ((ev) => {
+        baseurl = ev.originalTarget.value
+
+        console.log(baseurl);
+
+        getData("").then((text) => {
+            console.log("GET", text);
+        });
+    });
+});

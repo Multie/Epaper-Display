@@ -36,6 +36,8 @@
 #define EPD_WIDTH 400
 #define EPD_HEIGHT 300
 
+
+
 // EPD4IN2 commands
 #define PANEL_SETTING 0x00
 #define POWER_SETTING 0x01
