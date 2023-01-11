@@ -95,8 +95,9 @@ void PaintTest()
 
 #ifdef TestWebServer
 uint16_t indexvReal = 0;
-String postData = "";
-bool ClearDisplay = false;
+char* postData;
+int postDataSize =0;
+bool DisplayServerGodData = false;
 void DisplaySetupServer()
 {
     server.on(
@@ -138,7 +139,6 @@ void DisplaySetupServer()
         HTTP_POST,
         [](AsyncWebServerRequest *request)
         {
-            ClearDisplay = true;
             AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "123");
             response->addHeader("Access-Control-Allow-Origin", "*");
             response->addHeader("Access-Control-Allow-Methods", "GET, POST");
@@ -148,21 +148,24 @@ void DisplaySetupServer()
         NULL,
         [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
         {
+            Debug("HttpLen", len);
             if (index == 0)
             {
-                postData = "";
+                postData = (char*) malloc(total);
+                postDataSize = total;
             }
-            for (int a = 0; a < len; a++)
+            for (int a = 0; a <index + len; a++)
             {
-                postData += String((char)data[a]);
+                postData[index + a] = (char)data[a];
             }
             if (index + len == total)
             {
-                AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", postData);
+                AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "");
                 response->addHeader("Access-Control-Allow-Origin", "*");
                 response->addHeader("Access-Control-Allow-Methods", "GET, POST");
                 response->addHeader("Access-Control-Allow-Headers", "Content-Type");
                 request->send(response);
+                DisplayServerGodData = true;
             }
         });
 }
@@ -174,9 +177,15 @@ void DisplayStartup()
 #ifdef TestWebServer
     DisplaySetupServer();
 #endif
-    DisplayParseText("t»rect¦x»10¦y»10¦w»20¦h»20¦f»1¦c»b¦\nt»rect¦x»30¦y»10¦w»20¦h»20¦f»1¦c»r¦");
-    // DisplayParseText("t»pixel¦x»0¦y»0¦c»b¦\nt»circle¦x»0¦y»0¦r»0¦c»b¦\nt»line¦x1»0¦y1»0¦x2»0¦y2»0¦c»b¦\nt»rect¦x»0¦y»0¦w»0¦h»0¦c»b¦\nt»text¦x»0¦y»0¦w»0¦h»0¦c»b¦s»16¦a»cc¦l»¦\nt»value¦x»0¦y»0¦w»0¦h»0¦c»b¦s»16¦a»cc¦v»¦\nt»image¦x»0¦y»0¦w»0¦h»0¦c»b¦n»¦");
-    DisplayToImage();
+    // DisplayParseText("t»rect¦x»10¦y»10¦w»20¦h»20¦f»1¦c»b¦\nt»rect¦x»30¦y»10¦w»20¦h»20¦f»1¦c»r¦");
+    //  DisplayParseText("t»pixel¦x»0¦y»0¦c»b¦\nt»circle¦x»0¦y»0¦r»0¦c»b¦\nt»line¦x1»0¦y1»0¦x2»0¦y2»0¦c»b¦\nt»rect¦x»0¦y»0¦w»0¦h»0¦c»b¦\nt»text¦x»0¦y»0¦w»0¦h»0¦c»b¦s»16¦a»cc¦l»¦\nt»value¦x»0¦y»0¦w»0¦h»0¦c»b¦s»16¦a»cc¦v»¦\nt»image¦x»0¦y»0¦w»0¦h»0¦c»b¦n»¦");
+
+    // DisplayPaintRed.DrawCircleSegment(100,100,25,0,180,PaintColor::COLORED);
+   
+    DisplayPaintBlack.Clear(PaintColor::UNCOLORED);
+    int x[] = {50, 100, 20};
+    int y[] = {10, 50, 50};
+    DisplayPaintBlack.DrawFilledPolygone(x, y, 3, PaintColor::COLORED);
 }
 
 void DisplayWakeup()
@@ -199,19 +208,23 @@ void DisplayUpdate()
         DisplayDraw();
     }
 #ifdef TestWebServer
-    else if (postData.length() > 0)
+    else if (DisplayServerGodData && postDataSize > 0)
     {
+        DisplayServerGodData = false;
         DisplayPaintBlack.Clear(UNCOLORED);
         DisplayPaintRed.Clear(UNCOLORED);
-        DisplayParseText(postData);
-        postData = "";
+        DisplayParseText(postData,postDataSize);
+
+        postDataSize = 0;
+        free(postData);
+        postData = nullptr;
     }
-    else if (ClearDisplay) {
-        ClearDisplay = false;
-         DisplayPaintBlack.Clear(UNCOLORED);
-        DisplayPaintRed.Clear(UNCOLORED);
-        postData = "";
-    }
+
+    /*ClearDisplay = false;
+     DisplayPaintBlack.Clear(UNCOLORED);
+    DisplayPaintRed.Clear(UNCOLORED);
+    postData = "";
+    */
 
 #endif
 }

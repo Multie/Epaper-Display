@@ -15,8 +15,6 @@
  *   limitations under the License.
  */
 
-
-
 body {
   width: 100vw;
   height: 100vh;
@@ -44,40 +42,60 @@ body {
 .sidebar.right {
   overflow-y: scroll;
   overflow-x: hidden;
- 
+  display: flex;
+  flex-direction: column;
   flex-grow: 1;
+  justify-content: start;
+  align-items: center;
 }
-.itemGroup {
+.itemGroupVertical {
   margin: 2px;
-  
+
   width: 20%;
   border: solid 1px rgb(213, 213, 213);
   background: white;
+  display: flex;
+  flex-direction: column;
+}
+.itemGroupHorizontal {
+  margin: 2px;
+
+  width: 100%;
+  border: solid 1px rgb(213, 213, 213);
+  background: white;
+  display: grid;
+  grid-template-areas: "z t x y c x2 y2 w h r s l n f a";
 }
 .item {
   display: flex;
 }
+.itemGroupHorizontal .item {
+  border-left: solid 1px rgb(213, 213, 213);
+}
 .itemLabel {
   margin: 4px;
   flex-grow: 1;
- 
+  min-width: 60px;
   display: flex;
   justify-content: left;
   align-items: center;
 }
 .itemValue {
   margin: 4px;
- display: flex;
- justify-content: center;
- align-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 .itemValue input {
   text-align: right;
-  min-width: 75px;
+  min-width: 50px;
   max-width: 125px;
 }
+.itemValue input[type=number] {
+  text-align: right;
+  width: 50px;
+}
 .itemValue button {
-  
 }
 .itemValue select {
   min-width: 75px;
@@ -98,14 +116,12 @@ body {
   margin-bottom: 4px;
 }
 
-
-
 .center {
   display: flex;
   justify-content: space-around;
   align-items: center;
   background: rgb(213, 213, 213);
- 
+
   height: 320px;
 }
 
@@ -122,5 +138,46 @@ body {
   /*height: 63.6mm;*/
   display: block;
   border: 1px solid black;
-  
 }
+
+/* Table */
+
+.contentTable {
+  border-collapse: collapse;
+  width: 100%;
+  border: 1px solid black;
+  display: table;
+}
+.contentTable th,td {
+  border: 1px solid black;
+}
+.contentTableCell {
+  /*border: 1px solid black;*/
+  margin: 0;
+  padding: 2px;
+  display: flex;
+  justify-content: right;
+  align-items: center;
+  position: relative;
+}
+.contentTableCell * {
+  margin-left: 2px;
+  margin-right: 2px;
+}
+
+.contentTableInput[type=number] {
+  text-align: right;
+  background: transparent;
+  width: 75px
+}
+.contentTableInput[type=number] label {
+  text-align: right;
+}
+.contentTableCell.poly {
+  flex-direction: column;
+}
+.contentTableInputPoly {
+    display: flex;
+    flex-direction: row;
+}
+

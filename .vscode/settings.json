@@ -17,6 +17,8 @@
         "type_traits": "cpp",
         "utility": "cpp",
         "*.tcc": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "bitset": "cpp",
+        "algorithm": "cpp"
     }
 }

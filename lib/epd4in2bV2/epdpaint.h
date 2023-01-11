@@ -26,23 +26,27 @@
 
 #ifndef EPDPAINT_H
 #define EPDPAINT_H
+#include <Arduino.h>
 
 // Display orientation
-#define ROTATE_0 0
-#define ROTATE_90 1
-#define ROTATE_180 2
-#define ROTATE_270 3
+enum PaintRotation {
+    ROTATE_0 = 0,
+    ROTATE_90 = 1,
+    ROTATE_180 = 2,
+    ROTATE_270 = 3
+};
+enum PaintColor
+{
+    COLORED = 1,
+    UNCOLORED = 0
+};
 
 // Color inverse. 1 or 0 = set or reset a bit if set a colored pixel
 #define IF_INVERT_COLOR 1
 
-#include <Arduino.h>
+
 #include "fonts.h"
 
-enum PaintColor {
-    COLORED = 1,
-    UNCOLORED = 0
-};
 
 class Paint
 {
@@ -54,8 +58,8 @@ public:
     void SetWidth(int width);
     int GetHeight(void);
     void SetHeight(int height);
-    int GetRotate(void);
-    void SetRotate(int rotate);
+    PaintRotation GetRotate(void);
+    void SetRotate(PaintRotation rotate);
     unsigned char *GetImage(void);
     void DrawAbsolutePixel(int x, int y, PaintColor colored);
     void DrawPixel(int x, int y, PaintColor colored);
@@ -69,6 +73,10 @@ public:
     void DrawCircle(int x, int y, int radius, PaintColor colored);
     void DrawFilledCircle(int x, int y, int radius, PaintColor colored);
 
+    void DrawFilledPolygone(int xs[],int ys[], int length, PaintColor colored);
+
+    void DrawCircleSegment(int x, int y, int radius, int startAngle, int endAngle, PaintColor colored);
+    void DrawFilledCircleSegment(int x, int y, int startRadius, int endRadius, int startAngle, int endAngle, PaintColor colored);
     bool hasChanged();
     void resetChanged();
 
@@ -76,7 +84,7 @@ private:
     unsigned char *image;
     int width;
     int height;
-    int rotate;
+    PaintRotation rotate;
     bool Changed;
 };
 

@@ -1,0 +1,13 @@
+Grid:
+t»rect¦x»0¦y»0¦w»50¦h»100¦c»r¦
+t»line¦x»0¦y»25¦x2»50¦y2»25¦c»r¦
+z»1¦t»line¦y»+50¦y2»+50¦c»r¦
+A:
+t»pixel¦x»+5¦y»0¦c»b¦
+z»1¦t»rect¦y»+25¦w»10¦h»50¦f»1¦
+z»1¦t»rect¦x»+10¦w»20¦h»10¦
+z»1¦t»rect¦x»+20¦w»10¦h»50¦
+z»1¦t»rect¦y»+25¦w»-30¦h»10¦
+B:
+
+

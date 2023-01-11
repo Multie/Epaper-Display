@@ -44,35 +44,61 @@ function getData(path, consume) {
 
 function postData(path, text) {
     return new Promise((resolve, reject) => {
+        
+        let array = new Uint8Array(text.length);
+        for (let a=0; a< text.length;a++) {
+            array[a] = text.charCodeAt(a);
+        }
+       
         const req = new XMLHttpRequest();
         req.addEventListener("load", () => {
             resolve(req.responseText);
         });
-        req.open("POST", baseurl + path);
-        req.send(text);
+        req.open("POST", baseurl + path,false);
+        req.send(array);
+/*
+        fetch(baseurl + path, {
+            method: 'POST', // *GET, POST, PUT, DELETE, etc.
+            mode: 'cors', // no-cors, *cors, same-origin
+            cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+            credentials: 'same-origin', // include, *same-origin, omit
+            headers: {
+              'Content-Type': 'arraybuffer'
+              // 'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            redirect: 'follow', // manual, *follow, error
+            referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+            body: text // body data type must match "Content-Type" header
+          }).then((response)=>{
+            resolve(response.text());
+          });*/
     });
 }
-/*
-    x PosX
-    y PosY
-    x2 PosX2
-    y2 PosY2
-    c Color
-    r Radius
-    f Fill
-    w Width
-    h Height
-    s Textsize
-    l Label
-    v Value
-    n Name
-    z hold
-*/
+
+const Parameter = {
+    hold: "z",
+    type: "t",
+    x: "x",
+    y: "y",
+    color: "c",
+    x1: "x1",
+    y1: "y1",
+    x2: "x2",
+    y2: "y2",
+    width: "w",
+    height: "h",
+    radius: "r",
+    size: "s",
+    label: "l",
+    name: "n",
+    fill: "f",
+    align: "a"
+}
 class DisplayOption {
     constructor() {
         this.name = "";
         this.options = {
-            z: {
+            [Parameter.hold]: {
                 type: "checkbox",
                 name: "Hold",
                 value: "",
@@ -87,14 +113,14 @@ class DisplayOption {
 
     getOutputValue(name, value) {
         console.log(name + String.fromCharCode(187) + value + String.fromCharCode(166))
-        
+
         if (value == null || value == undefined) {
             return "";
         }
         if (value.toString().length == 0) {
             return "";
         }
-        if (typeof(value) == "number" && isNaN(value)) {
+        if (typeof (value) == "number" && isNaN(value)) {
             console.log("is nan")
             return "";
         }
@@ -106,7 +132,7 @@ class DisplayOption {
         let output = "";
         if (this.options.z) {
             let key = "z";
-            output+= this.getOutputValue(key, this.options[key].value);
+            output += this.getOutputValue(key, this.options[key].value);
         }
         output += this.getOutputValue("t", this.type);
 
@@ -114,7 +140,7 @@ class DisplayOption {
         console.log(this.options);
         let indexofz = keys.indexOf("z");
         if (indexofz >= 0) {
-            keys.splice(indexofz,1);
+            keys.splice(indexofz, 1);
         }
         keys.forEach(key => {
             output += this.getOutputValue(key, this.options[key].value);
@@ -122,11 +148,9 @@ class DisplayOption {
 
         return output;
     }
-
-
     createOptionsHtml(parrent) {
         let itemroot = document.createElement("div");
-        itemroot.classList.add("itemGroup")
+        itemroot.classList.add("itemGroupVertical")
         itemroot.id = this.id;
         parrent.appendChild(itemroot);
 
@@ -147,162 +171,347 @@ class DisplayOption {
         button.innerHTML = "Add";
         button.setAttribute("type", this.type);
         button.onclick = ((ev) => {
-            let button = ev.originalTarget;
+            let button = ev.target;
             let type = button.getAttribute("type");
             display.addContent(type);
         });
         value.appendChild(button);
 
     }
-
-
     createContentHtml(parrent) {
-        let keys = Object.keys(this.options);
 
-        let itemroot = document.createElement("div");
-        itemroot.classList.add("itemGroup")
-        itemroot.id = this.id;
-        parrent.appendChild(itemroot);
-        if (true) {
-            let item = document.createElement("div");
-            item.classList.add("item");
-            itemroot.appendChild(item);
-            let label = document.createElement("div");
-            label.classList.add("itemLabel");
-            label.innerHTML = this.name;
-            item.appendChild(label);
-            let value = document.createElement("div");
-            value.classList.add("itemValue");
-            let removebutton = document.createElement("button");
-            removebutton.innerHTML = "Remove"
-            removebutton.setAttribute("name", this.id);
-            removebutton.onclick = ((ev) => {
-                // get rid of html
-                let id = ev.originalTarget.getAttribute("name");
-                let itemroot = document.getElementById(id);
-                itemroot.remove();
-                // get rid of array element
-                let index = display.content.findIndex((element) => {
-                    return element.id == id;
-                });
-                if (index >= 0) {
-                    display.content.splice(index, 1);
+        let headernames = [];
+        headernames.push("controls");
+        headernames = headernames.concat(Object.keys(Parameter));
+        console.log(headernames);
+
+        let row = document.createElement("tr");
+        row.id = this.id;
+
+
+        parrent.appendChild(row);
+        headernames.forEach(key => {
+            let colum = document.createElement("td");
+
+            row.appendChild(colum);
+
+            let cell = document.createElement("div");
+            cell.classList.add("contentTableCell")
+            colum.appendChild(cell);
+
+            if (key == "controls") {
+                let removebutton = document.createElement("button");
+                removebutton.innerHTML = "Remove"
+                removebutton.setAttribute("name", this.id);
+                removebutton.onclick = ((ev) => {
+                    // get rid of html
+                    let id = ev.target.getAttribute("name");
+                    let itemroot = document.getElementById(id);
+                    itemroot.remove();
+                    // get rid of array element
+                    let index = display.content.findIndex((element) => {
+                        return element.id == id;
+                    });
+                    if (index >= 0) {
+                        display.content.splice(index, 1);
+                        display.createOutput();
+                    }
+
+                })
+                cell.appendChild(removebutton);
+
+                let MoveBackButton = document.createElement("button");
+                MoveBackButton.innerHTML = "/\\"
+                MoveBackButton.setAttribute("name", this.id);
+                MoveBackButton.onclick = ((ev) => {
+                    // get rid of html
+                    let id = ev.target.getAttribute("name");
+                    let index = display.content.findIndex((element) => {
+                        return element.id == id;
+                    });
+                    if (index >= 0) {
+                        let element = display.content.splice(index, 1);
+                        display.createOutput();
+                        display.content.splice(index - 1, -1, element[0]);
+                    }
+                    display.createContentHtml();
                     display.createOutput();
-                }
+                })
+                cell.appendChild(MoveBackButton);
 
-            })
-            value.appendChild(removebutton);
-            let hidebutton = document.createElement("button");
-            hidebutton.innerHTML = "Hide"
-            hidebutton.setAttribute("name", this.id);
-            hidebutton.onclick = ((ev) => {
-                // get rid of html
-                let id = ev.originalTarget.getAttribute("name");
-                let itemroot = document.getElementById(id);
-                itemroot.remove();
-                let element = display.content.find((element) => {
-                    return element.id == id;
-                });
-                element.hide = true;
-            })
-            value.appendChild(hidebutton);
+                let MoveForwardButton = document.createElement("button");
+                MoveForwardButton.innerHTML = "\\/"
+                MoveForwardButton.setAttribute("name", this.id);
+                MoveForwardButton.onclick = ((ev) => {
+                    // get rid of html
+                    let id = ev.target.getAttribute("name");
+                    let index = display.content.findIndex((element) => {
+                        return element.id == id;
+                    });
+                    if (index >= 0) {
+                        let element = display.content.splice(index, 1);
+                        display.createOutput();
+                        display.content.splice(index + 1, -1, element[0]);
+                    }
+                    display.createContentHtml();
+                    display.createOutput();
+                })
+                cell.appendChild(MoveForwardButton);
 
-            item.appendChild(value);
-        }
-        keys.forEach(key => {
-            let option = this.options[key];
-            let item = document.createElement("div");
-            item.classList.add("item");
-            itemroot.appendChild(item);
-            let label = document.createElement("div");
-            label.classList.add("itemLabel");
-            label.innerHTML = option.name;
-            item.appendChild(label);
-            let value = document.createElement("div");
-            value.classList.add("itemValue");
-            item.appendChild(value);
-            let input = null;
-            if (option.type == "number") {
-                input = document.createElement("input");
-                input.type = "number";
-                input.value = option.value;
-                input.onchange = ((ev) => {
-                    let key = ev.originalTarget.getAttribute("name");
-                    let option = this.options[key];
-                    if (option.min != null || option.min != undefined) {
-                        if (ev.originalTarget.value < option.min) {
-                            ev.originalTarget.value = option.min;
+                let hidebutton = document.createElement("button");
+                hidebutton.innerHTML = "Hide"
+                hidebutton.setAttribute("name", this.id);
+                hidebutton.onclick = ((ev) => {
+                    // get rid of html
+                    let id = ev.target.getAttribute("name");
+                    let itemroot = document.getElementById(id);
+                    itemroot.remove();
+                    let element = display.content.find((element) => {
+                        return element.id == id;
+                    });
+                    element.hide = true;
+                })
+                cell.appendChild(hidebutton);
+            }
+            if (key == "type") {
+                cell.innerHTML = this.name;
+            }
+            else {
+                let option = this.options[Parameter[key]];
+
+                if (option) {
+
+                    let input = null;
+                    if (option.type == "number") {
+                        input = document.createElement("input");
+                        input.type = "number";
+                        input.value = option.value;
+                        input.readOnly = (option.readOnly == true);
+                        console.log(option.readOnly);
+                        input.onchange = ((ev) => {
+                            let key = ev.target.getAttribute("name");
+                            let option = this.options[key];
+                            let sign = "";
+                            if (ev.target.value.startsWith("+")) {
+                                sign = "+"
+                            }
+                            else if (ev.target.value.startsWith("-")) {
+                                sign = "-"
+                            }
+                            if (sign.length == 0) {
+                                if (option.min != null || option.min != undefined) {
+                                    if (ev.target.value < option.min) {
+                                        ev.target.value = option.min;
+                                    }
+                                }
+                                if (option.max != null || option.max != undefined) {
+                                    if (ev.target.value > option.max) {
+                                        ev.target.value = option.max;
+                                    }
+                                }
+                            }
+                            let floatValue = parseFloat(ev.target.value);
+                            if (floatValue < 0) {
+                                floatValue = floatValue * -1;
+                            }
+                            if (!isNaN(floatValue)) {
+                                option.value = sign + floatValue.toString();
+                            }
+                            else {
+                                option.value = "";
+                            }
+                            display.createOutput();
+
+                        });
+                        if (option.min != null || option.min != undefined) {
+                            input.min = option.max * -1;
+                        }
+                        if (option.max != null || option.max != undefined) {
+                            input.max = option.max;
                         }
                     }
-                    if (option.max != null || option.max != undefined) {
-                        if (ev.originalTarget.value > option.max) {
-                            ev.originalTarget.value = option.max;
-                        }
+                    else if (option.type == "text") {
+                        input = document.createElement("input");
+                        input.type = "text";
+                        input.value = option.value;
+                        input.onchange = ((ev) => {
+                            let key = ev.target.getAttribute("name");
+                            this.options[key].value = ev.target.value;
+                            display.createOutput();
+
+                        });
                     }
-                    option.value = parseFloat(ev.originalTarget.value);
+                    else if (option.type == "select") {
+                        input = document.createElement("select");
+                        let opt = document.createElement("option");
+                        opt.value = "";
+                        opt.innerHTML = "-";
+                        input.appendChild(opt);
 
-                    display.createOutput();
-                });
-                if (option.min != null || option.min != undefined) {
-                    input.min = option.min;
+                        option.options.forEach(element => {
+                            let opt = document.createElement("option");
+                            opt.value = element.value;
+                            opt.innerHTML = element.label;
+                            input.appendChild(opt);
+                        });
+
+                        input.onchange = ((ev) => {
+                            let key = ev.target.getAttribute("name");
+                            this.options[key].value = ev.target.value;
+                            display.createOutput();
+
+                        });
+                        input.value = option.value;
+                    }
+                    else if (option.type == "checkbox") {
+                        input = document.createElement("input");
+                        input.type = "checkbox";
+                        input.checked = option.value == option.true;
+                        input.onchange = (ev => {
+                            let key = ev.target.getAttribute("name");
+                            this.options[key].value = ev.target.checked ? this.options[key].true : this.options[key].false;
+                            console.log("change", this.options[key].value);
+                            display.createOutput();
+                        });
+                    }
+                    else if (option.type == "poly") {
+
+                        let button = document.createElement("button");
+                        cell.appendChild(button);
+                        button.setAttribute("name", Parameter[key]);
+                        button.innerHTML = "Add"
+                        cell.classList.add("poly");
+                        this.polyCreateOutput = ((option) => {
+                            let text = "";
+                            let count = 0;
+                            option.values.forEach((value) => {
+                                if (value.x != "" && value.y != "") {
+                                    let num = parseInt(value.x);
+                                    if (num < 0) {
+                                        num = (num >>> 0)
+                                    }
+                                    if (num > 32767) {
+                                        num = 32767;
+                                    }
+                                    if (num < -32767) {
+                                        num = -32767;
+                                    }
+                                    let bin = parseInt(num).toString(2).padStart(16, "0");
+                                    let len = bin.length;
+                                    let upper = bin.substring(len - 16, len - 8);
+                                    let lower = bin.substring(len - 8, len);
+                                    let upperText = String.fromCharCode(parseInt(upper, 2))
+                                    let lowerText = String.fromCharCode(parseInt(lower, 2))
+                                    text += lowerText + upperText;
+                                    console.log("PolyX",value.x,upperText,lowerText);
+                                    num = parseInt(value.y);
+                                    if (num < 0) {
+                                        num = (num >>> 0)
+                                    }
+                                    if (num > 32767) {
+                                        num = 32767;
+                                    }
+                                    if (num < -32767) {
+                                        num = -32767;
+                                    }
+                                    bin = parseInt(num).toString(2).padStart(16, "0");
+                                    len = bin.length;
+                                    upper = bin.substring(len - 16, len - 8);
+                                    lower = bin.substring(len - 8, len);
+                                    upperText = String.fromCharCode(parseInt(upper, 2))
+                                    lowerText = String.fromCharCode(parseInt(lower, 2))
+                                    console.log("PolyY",value.y,upperText,lowerText);
+                                    text += lowerText + upperText;
+                                    count++;
+                                }
+                            });
+                            this.options[Parameter.size].value = count.toString();
+                            this.options[Parameter.size].input.value = count.toString();
+                            option.value = text;
+                        })
+                        this.addValue = ((value, index) => {
+                            let div = document.createElement("div");
+                            cell.appendChild(div);
+                            div.classList.add("contentTableInputPoly");
+                            let labelx = document.createElement("div");
+                            labelx.innerHTML = "X";
+                            div.appendChild(labelx);
+                            let xinput = document.createElement("input");
+                            div.appendChild(xinput);
+                            xinput.setAttribute("name", Parameter[key])
+                            xinput.setAttribute("index", index);
+                            xinput.value = value.x;
+                            xinput.type = "number";
+                            xinput.onchange = ((ev) => {
+                                console.log(ev);
+                                let key = ev.target.getAttribute("name");
+                                let index = ev.target.getAttribute("index");
+                                let option = this.options[key];
+                                let value = option.values[index];
+                                value.x = ev.target.value;
+                                this.polyCreateOutput(option);
+                                display.createOutput();
+                            });
+
+                            let labely = document.createElement("div");
+                            labely.innerHTML = "Y";
+                            div.appendChild(labely);
+                            let yinput = document.createElement("input");
+                            div.appendChild(yinput);
+                            yinput.setAttribute("name", Parameter[key])
+                            yinput.setAttribute("index", index);
+                            yinput.type = "number";
+                            yinput.value = value.y;
+                            yinput.onchange = ((ev) => {
+                                let key = ev.target.getAttribute("name");
+                                let index = ev.target.getAttribute("index");
+                                let option = this.options[key];
+                                let value = option.values[index];
+                                value.y = ev.target.value;
+                                this.polyCreateOutput(option);
+                                display.createOutput();
+                            });
+                        });
+
+
+
+                        button.onclick = (ev) => {
+                            let key = ev.target.getAttribute("name");
+                            let option = this.options[key];
+                            let value = {
+                                x: "",
+                                y: ""
+                            }
+                            if (option.values.length < option.max) {
+                                option.values.push(value);
+                                this.addValue(value, option.values.length - 1);
+                            }
+                            display.createOutput();
+                        };
+
+                        option.values.forEach((value, index) => {
+                            this.addValue(value, index);
+                        });
+
+                    }
+                    if (input) {
+                        if (key != option.name.toLocaleLowerCase()) {
+                            let label = document.createElement("label");
+                            label.innerHTML = option.name;
+                            label.for = this.id + "_" + Parameter[key];
+                            cell.appendChild(label);
+                        }
+                        option.input = input;
+                        input.id = this.id + "_" + Parameter[key];
+                        input.setAttribute("name", Parameter[key]);
+                        input.classList.add("contentTableInput");
+                        cell.appendChild(input);
+                    }
                 }
-                if (option.max != null || option.max != undefined) {
-                    input.max = option.max;
-                }
             }
-            else if (option.type == "text") {
-                input = document.createElement("input");
-                input.type = "text";
-                input.value = option.value;
-                input.onchange = ((ev) => {
-                    let key = ev.originalTarget.getAttribute("name");
-                    this.options[key].value = ev.originalTarget.value;
-                    display.createOutput();
-                });
-            }
-            else if (option.type == "select") {
-                input = document.createElement("select");
-                let opt = document.createElement("option");
-                opt.value = "";
-                opt.innerHTML = "-";
-                input.appendChild(opt);
 
-                option.options.forEach(element => {
-                    let opt = document.createElement("option");
-                    opt.value = element.value;
-                    opt.innerHTML = element.label;
-                    input.appendChild(opt);
-                });
-
-                input.onchange = ((ev) => {
-                    let key = ev.originalTarget.getAttribute("name");
-                    this.options[key].value = ev.originalTarget.value;
-                    display.createOutput();
-                });
-                input.value = option.value;
-            }
-            else if (option.type == "checkbox") {
-                input = document.createElement("input");
-                input.type = "checkbox";
-                input.checked = option.value == option.true;
-                input.onchange = (ev => {
-                    let key = ev.originalTarget.getAttribute("name");
-                    this.options[key].value = ev.originalTarget.checked ? this.options[key].true : this.options[key].false;
-                    console.log("change", this.options[key].value);
-                    display.createOutput();
-                });
-            }
-            if (input) {
-                input.id = this.id + "_" + key;
-                input.setAttribute("name", key);
-                value.appendChild(input);
-            }
         });
-
-
     }
-
-
     clone() {
         return new DisplayOption();
     }
@@ -314,21 +523,21 @@ class DisplayOptionPixel extends DisplayOption {
         this.name = "Pixel";
         this.type = "pixel";
         let options = {
-            x: {
+            [Parameter.x]: {
                 type: "number",
                 name: "X",
                 min: 0,
                 max: 400,
                 value: ""
             },
-            y: {
+            [Parameter.y]: {
                 type: "number",
                 name: "Y",
                 min: 0,
                 max: 300,
                 value: ""
             },
-            c: {
+            [Parameter.color]: {
                 type: "select",
                 name: "Color",
                 options: [
@@ -353,35 +562,35 @@ class DisplayOptionLine extends DisplayOption {
         this.type = "line";
 
         let options = {
-            x: {
+            [Parameter.x]: {
                 type: "number",
-                name: "Start X",
+                name: "Start",
                 min: 0,
                 max: 400,
                 value: ""
             },
-            y: {
+            [Parameter.y]: {
                 type: "number",
-                name: "Start Y",
+                name: "Start",
                 min: 0,
                 max: 300,
                 value: ""
             },
-            x2: {
+            [Parameter.x2]: {
                 type: "number",
-                name: "End X",
+                name: "End",
                 min: 0,
                 max: 400,
                 value: ""
             },
-            y2: {
+            [Parameter.y2]: {
                 type: "number",
-                name: "End Y",
+                name: "End",
                 min: 0,
                 max: 300,
                 value: ""
             },
-            c: {
+            [Parameter.color]: {
                 type: "select",
                 name: "Color",
                 options: [
@@ -406,27 +615,27 @@ class DisplayOptionCircle extends DisplayOption {
         this.name = "Circle";
         this.type = "circle";
         let options = {
-            x: {
+            [Parameter.x]: {
                 type: "number",
                 name: "X",
                 min: 0,
                 max: 400,
                 value: ""
             },
-            y: {
+            [Parameter.y]: {
                 type: "number",
                 name: "Y",
                 min: 0,
                 max: 300,
                 value: ""
             },
-            r: {
+            [Parameter.radius]: {
                 type: "number",
                 name: "Radius",
                 min: 0,
                 value: ""
             },
-            c: {
+            [Parameter.color]: {
                 type: "select",
                 name: "Color",
                 options: [
@@ -436,7 +645,7 @@ class DisplayOptionCircle extends DisplayOption {
                 ],
                 value: ""
             },
-            f: {
+            [Parameter.fill]: {
                 type: "select",
                 name: "Fill",
                 options: [
@@ -444,7 +653,7 @@ class DisplayOptionCircle extends DisplayOption {
                     { label: "0", value: "0" },
                 ],
                 value: "",
-                
+
             }
         }
         this.options = { ...this.options, ...options };
@@ -453,41 +662,51 @@ class DisplayOptionCircle extends DisplayOption {
         return new DisplayOptionCircle();
     }
 }
-class DisplayOptionRectangle extends DisplayOption {
+class DisplayOptionCircleSegment extends DisplayOption {
     constructor() {
         super();
-        this.name = "Rectangle";
-        this.type = "rect";
+        this.name = "Segment";
+        this.type = "cicseg";
         let options = {
-            x: {
+            [Parameter.x]: {
                 type: "number",
                 name: "X",
                 min: 0,
                 max: 400,
                 value: ""
             },
-            y: {
+            [Parameter.y]: {
                 type: "number",
                 name: "Y",
                 min: 0,
                 max: 300,
                 value: ""
             },
-            w: {
+            [Parameter.radius]: {
                 type: "number",
-                name: "Width",
+                name: "Start Radius",
                 min: 0,
-                max: 400,
                 value: ""
             },
-            h: {
+            [Parameter.size]: {
                 type: "number",
-                name: "Height",
+                name: "End Radius",
                 min: 0,
-                max: 300,
                 value: ""
             },
-            c: {
+            [Parameter.x2]: {
+                type: "number",
+                name: "Start Angle",
+                min: 0,
+                value: ""
+            },
+            [Parameter.y2]: {
+                type: "number",
+                name: "End Angle",
+                min: 0,
+                value: ""
+            },
+            [Parameter.color]: {
                 type: "select",
                 name: "Color",
                 options: [
@@ -497,7 +716,7 @@ class DisplayOptionRectangle extends DisplayOption {
                 ],
                 value: ""
             },
-            f: {
+            [Parameter.fill]: {
                 type: "select",
                 name: "Fill",
                 options: [
@@ -505,7 +724,68 @@ class DisplayOptionRectangle extends DisplayOption {
                     { label: "0", value: "0" },
                 ],
                 value: "",
-                
+
+            }
+        }
+        this.options = { ...this.options, ...options };
+    }
+    clone() {
+        return new DisplayOptionCircleSegment();
+    }
+}
+class DisplayOptionRectangle extends DisplayOption {
+    constructor() {
+        super();
+        this.name = "Rectangle";
+        this.type = "rect";
+        let options = {
+            [Parameter.x]: {
+                type: "number",
+                name: "X",
+                min: 0,
+                max: 400,
+                value: ""
+            },
+            [Parameter.y]: {
+                type: "number",
+                name: "Y",
+                min: 0,
+                max: 300,
+                value: ""
+            },
+            [Parameter.width]: {
+                type: "number",
+                name: "Width",
+                min: 0,
+                max: 400,
+                value: ""
+            },
+            [Parameter.height]: {
+                type: "number",
+                name: "Height",
+                min: 0,
+                max: 300,
+                value: ""
+            },
+            [Parameter.color]: {
+                type: "select",
+                name: "Color",
+                options: [
+                    { label: "Black", value: "b" },
+                    { label: "Red", value: "r" },
+                    { label: "White", value: "w" },
+                ],
+                value: ""
+            },
+            [Parameter.fill]: {
+                type: "select",
+                name: "Fill",
+                options: [
+                    { label: "1", value: "1" },
+                    { label: "0", value: "0" },
+                ],
+                value: "",
+
             }
         };
         this.options = { ...this.options, ...options };
@@ -520,35 +800,35 @@ class DisplayOptionText extends DisplayOption {
         this.name = "Text";
         this.type = "text";
         let options = {
-            x: {
+            [Parameter.x]: {
                 type: "number",
-                name: "Start X",
+                name: "X",
                 min: 0,
                 max: 400,
                 value: ""
             },
-            y: {
+            [Parameter.y]: {
                 type: "number",
-                name: "Start Y",
+                name: "Y",
                 min: 0,
                 max: 300,
                 value: ""
             },
-            w: {
+            [Parameter.width]: {
                 type: "number",
                 name: "Width",
                 min: 0,
                 max: 400,
                 value: ""
             },
-            h: {
+            [Parameter.height]: {
                 type: "number",
                 name: "Height",
                 min: 0,
                 max: 300,
                 value: ""
             },
-            c: {
+            [Parameter.color]: {
                 type: "select",
                 name: "Color",
                 options: [
@@ -558,9 +838,9 @@ class DisplayOptionText extends DisplayOption {
                 ],
                 value: ""
             },
-            s: {
+            [Parameter.size]: {
                 type: "select",
-                name: "Text Size",
+                name: "Size",
                 options: [
                     { label: "8px", value: "b" },
                     { label: "12px", value: "12" },
@@ -570,9 +850,9 @@ class DisplayOptionText extends DisplayOption {
                 ],
                 value: ""
             },
-            a: {
+            [Parameter.align]: {
                 type: "select",
-                name: "Text Align",
+                name: "Align",
                 options: [
                     { label: "Top Left", value: "tl" },
                     { label: "Top Center", value: "tc" },
@@ -586,9 +866,9 @@ class DisplayOptionText extends DisplayOption {
                 ],
                 value: ""
             },
-            l: {
+            [Parameter.label]: {
                 type: "text",
-                name: "Text",
+                name: "Label",
                 value: ""
             }
         };
@@ -604,35 +884,35 @@ class DisplayOptionValue extends DisplayOption {
         this.name = "Value";
         this.type = "value";
         let options = {
-            x: {
+            [Parameter.x]: {
                 type: "number",
-                name: "Start X",
+                name: "X",
                 min: 0,
                 max: 400,
                 value: ""
             },
-            y: {
+            [Parameter.y]: {
                 type: "number",
-                name: "Start Y",
+                name: "Y",
                 min: 0,
                 max: 300,
                 value: ""
             },
-            w: {
+            [Parameter.width]: {
                 type: "number",
                 name: "Width",
                 min: 0,
                 max: 400,
                 value: ""
             },
-            h: {
+            [Parameter.height]: {
                 type: "number",
                 name: "Height",
                 min: 0,
                 max: 300,
                 value: ""
             },
-            c: {
+            [Parameter.color]: {
                 type: "select",
                 name: "Color",
                 options: [
@@ -642,9 +922,9 @@ class DisplayOptionValue extends DisplayOption {
                 ],
                 value: ""
             },
-            s: {
+            [Parameter.size]: {
                 type: "select",
-                name: "Text Size",
+                name: "Size",
                 options: [
                     { label: "8px", value: "8" },
                     { label: "12px", value: "12" },
@@ -654,9 +934,9 @@ class DisplayOptionValue extends DisplayOption {
                 ],
                 value: ""
             },
-            a: {
+            [Parameter.align]: {
                 type: "select",
-                name: "Text Align",
+                name: "Align",
                 options: [
                     { label: "Top Left", value: "tl" },
                     { label: "Top Center", value: "tc" },
@@ -670,7 +950,7 @@ class DisplayOptionValue extends DisplayOption {
                 ],
                 value: ""
             },
-            n: {
+            [Parameter.name]: {
                 type: "text",
                 name: "Name",
                 value: ""
@@ -688,35 +968,35 @@ class DisplayOptionImage extends DisplayOption {
         this.name = "Image";
         this.type = "image";
         let options = {
-            x: {
+            [Parameter.x]: {
                 type: "number",
-                name: "Start X",
+                name: "X",
                 min: 0,
                 max: 400,
                 value: ""
             },
-            y: {
+            [Parameter.y]: {
                 type: "number",
-                name: "Start Y",
+                name: "Y",
                 min: 0,
                 max: 300,
                 value: ""
             },
-            w: {
+            [Parameter.width]: {
                 type: "number",
                 name: "Width",
                 min: 0,
                 max: 400,
                 value: ""
             },
-            h: {
+            [Parameter.height]: {
                 type: "number",
                 name: "Height",
                 min: 0,
                 max: 300,
                 value: ""
             },
-            c: {
+            [Parameter.color]: {
                 type: "select",
                 name: "Color",
                 options: [
@@ -726,7 +1006,7 @@ class DisplayOptionImage extends DisplayOption {
                 ],
                 value: ""
             },
-            n: {
+            [Parameter.name]: {
                 type: "text",
                 name: "Name",
                 value: ""
@@ -739,13 +1019,55 @@ class DisplayOptionImage extends DisplayOption {
         return new DisplayOptionImage();
     }
 }
+class DisplayOptionPolygone extends DisplayOption {
+    constructor() {
+        super();
+        this.name = "Polygone";
+        this.type = "poly";
+        let options = {
+            [Parameter.size]: {
+                type: "number",
+                name: "Count",
+                min: 1,
+                max: 15,
+                value: "",
+                readOnly:true
+            },
+            [Parameter.name]: {
+                type: "poly",
+                name: "Points",
+                max: 15,
+                value: "",
+                values: []
+            },
+            [Parameter.color]: {
+                type: "select",
+                name: "Color",
+                options: [
+                    { label: "Black", value: "b" },
+                    { label: "Red", value: "r" },
+                    { label: "White", value: "w" },
+                ],
+                value: ""
+            },
+        };
+        this.options = { ...this.options, ...options };
+    }
+    clone() {
+        return new DisplayOptionPolygone();
+    }
+}
+
+
 class Display {
     constructor() {
         this.options = [
             new DisplayOptionPixel(),
             new DisplayOptionCircle(),
+            new DisplayOptionCircleSegment(),
             new DisplayOptionLine(),
             new DisplayOptionRectangle(),
+            new DisplayOptionPolygone(),
             new DisplayOptionText(),
             new DisplayOptionValue(),
             new DisplayOptionImage(),
@@ -844,22 +1166,44 @@ t»line¦x»40¦y»0¦x2»40¦y2»23¦c»w¦`;
 
     loadFromTextBox() {
         let text = this.outputTextarea.value;
-        let lines = text.split("\n");
-        let content = [];
-        lines.forEach(line => {
-            let segments = line.split("¦");
-            let obj = {};
-            segments.forEach(element => {
-                let split = element.split("»");
-                if (split.length == 2) {
-                    let key = split[0];
-                    let value = split[1];
-                    obj[key] = value;
-                }
-            });
-            content.push(obj);
-        });
+        
+        let textOption = {};
 
+        let key = true;
+        let keytext = "";
+        let value = false;
+        let valuetext = "";
+        let content = [];
+        //t»line¦x»20¦y»23¦x2»20¦y2»300¦c»b¦
+        for (let a=0; a < text.length;a++) {
+            let char =text.charAt(a);
+            let charcode = text.charCodeAt(a);
+            if (key) {
+                if (charcode == 187) {
+                    key = false;
+                    value = true;
+                }
+                else if (char == '\n') {
+                    content.push(textOption);
+                    textOption = {};
+                }
+                else {
+                    keytext += char;
+                }
+            }
+            else if (value) {
+                if (charcode == 166) {
+                    key = true;
+                    value = false;
+                    textOption[keytext] = valuetext;
+                    valuetext = "";
+                    keytext  = "";
+                }
+                else {
+                    valuetext += char;
+                }
+            }
+        }
 
         content = content.map((element) => {
 
@@ -897,9 +1241,30 @@ t»line¦x»40¦y»0¦x2»40¦y2»23¦c»w¦`;
     createContentHtml() {
         let OptionsDiv = document.getElementById("OptionsDiv");
         OptionsDiv.innerHTML = "";
-        display.content.forEach(option => {
+
+        let table = document.createElement("table");
+        table.classList.add("contentTable");
+        // Header
+        let headernames = [];
+        headernames.push("Controls");
+        headernames = headernames.concat(Object.keys(Parameter));
+        headernames = headernames.map((name) => {
+            return name.charAt(0).toUpperCase() + name.slice(1);
+        });
+        let header = document.createElement("tr");
+        table.appendChild(header);
+        headernames.forEach(name => {
+            let row = document.createElement("th");
+            row.innerHTML = name;
+            header.appendChild(row);
+        });
+        OptionsDiv.appendChild(table);
+
+
+
+        display.content.forEach((option, index) => {
             if (!option.hide) {
-                option.createContentHtml(OptionsDiv);
+                option.createContentHtml(table);
             }
 
         });
@@ -916,7 +1281,8 @@ t»line¦x»40¦y»0¦x2»40¦y2»23¦c»w¦`;
     }
 
     setDisplay() {
-        console.log("text", this.text);
+        console.log("text", this.text,this.text.length);
+        
         return postData("/api/display/image", this.text);
 
         return new Promise((resolve) => { resolve() });
@@ -930,60 +1296,63 @@ t»line¦x»40¦y»0¦x2»40¦y2»23¦c»w¦`;
             this.drawData[2] = 0; // B
             this.drawData[3] = 100; // A
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            getData("/api/display/image", (reader) => {
-                var total = 0
-                var x = 0;
-                var y = 0;
-                var width = 400;
-                var height = 300;
-                var bytesize = 8;
-                display.drawData[0] = 0; // R
-                display.drawData[1] = 0; // G
-                display.drawData[2] = 0; // B
-                display.drawData[3] = 255; // A
-                return pump()
-                function pump() {
-                    return reader.read().then(({ done, value }) => {
-                        if (done) {
+            setTimeout(() => {
+                getData("/api/display/image", (reader) => {
+                    var total = 0
+                    var x = 0;
+                    var y = 0;
+                    var width = 400;
+                    var height = 300;
+                    var bytesize = 8;
+                    display.drawData[0] = 0; // R
+                    display.drawData[1] = 0; // G
+                    display.drawData[2] = 0; // B
+                    display.drawData[3] = 255; // A
+                    return pump()
+                    function pump() {
+                        return reader.read().then(({ done, value }) => {
+                            if (done) {
 
-                            return;
-                        }
-                        for (let a = 0; a < value.byteLength; a++) {
-                            let byte = value[a];
-                            if (total == width * height / bytesize) {
-                                x = 0;
-                                y = 0;
-                                display.drawData[0] = 255; // R
-                                display.drawData[1] = 0; // G
-                                display.drawData[2] = 0; // B
-                                display.drawData[3] = 255; // A
-                                console.log("Switch to red");
+                                return;
                             }
-                            for (let b = (bytesize - 1); b >= 0; b--) {
-
-                                if ((byte & 1 << b) != 0) {
-                                    display.ctx.putImageData(display.drawId, x, y);
-                                }
-                                x++;
-                                if (x >= 400) {
+                            for (let a = 0; a < value.byteLength; a++) {
+                                let byte = value[a];
+                                if (total == width * height / bytesize) {
                                     x = 0;
-                                    y++;
+                                    y = 0;
+                                    display.drawData[0] = 255; // R
+                                    display.drawData[1] = 0; // G
+                                    display.drawData[2] = 0; // B
+                                    display.drawData[3] = 255; // A
+                                    console.log("Switch to red");
                                 }
+                                for (let b = (bytesize - 1); b >= 0; b--) {
 
+                                    if ((byte & 1 << b) != 0) {
+                                        display.ctx.putImageData(display.drawId, x, y);
+                                    }
+                                    x++;
+                                    if (x >= 400) {
+                                        x = 0;
+                                        y++;
+                                    }
+
+                                }
+                                total++;
                             }
-                            total++;
-                        }
-                        console.log(`received ${value.byteLength} bytes (${total} bytes in total)`)
+                            console.log(`received ${value.byteLength} bytes (${total} bytes in total)`)
 
 
-                        return pump()
-                    })
-                }
-            }).then(() => {
-                resolve();
-            }, (err) => {
-                resolve();
-            });
+                            return pump()
+                        })
+                    }
+                }).then(() => {
+                    resolve();
+                }, (err) => {
+                    resolve();
+                });
+            })
+
 
 
 
@@ -1042,11 +1411,14 @@ function UploadDisplayData() {
     display.setDisplay().then(() => {
         setTimeout(() => {
             display.updateDisplay();
-        }, 1500);
+        }, 2500);
     });
 }
 function UpdateDisplay() {
-    display.updateDisplay();
+
+    setTimeout(() => {
+        display.updateDisplay();
+    }, 10);
 }
 function Unhide() {
     display.content.forEach((element) => {
@@ -1055,10 +1427,14 @@ function Unhide() {
     display.createContentHtml();
 }
 
-function LoadText() {
+function LoadTextClear() {
+    display.content = [];
     display.loadFromTextBox();
 }
 
+function LoadTextAppend() {
+    display.loadFromTextBox();
+}
 window.onload = (() => {
 
     baseurl = "http://192.168.0.94";
@@ -1077,12 +1453,15 @@ window.onload = (() => {
     }
 
     urlInput.onchange = ((ev) => {
-        baseurl = ev.originalTarget.value
+        baseurl = ev.target.value
 
         console.log(baseurl);
 
         getData("").then((text) => {
             console.log("GET", text);
         });
+
+        
     });
+
 });
