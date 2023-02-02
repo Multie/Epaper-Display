@@ -1,0 +1,15 @@
+https://fontstruct.com/fontstructions/show/2215380/16-segment-display-11
+Streighs
+t»rect¦x»10¦y»0¦w»30¦h»10¦c»b¦f»1¦
+t»rect¦x»50¦y»0¦w»30¦h»10¦c»b¦f»1¦
+t»rect¦x»0¦y»10¦w»10¦h»30¦c»b¦f»1¦
+t»rect¦x»40¦y»10¦w»10¦h»30¦c»b¦f»1¦
+t»rect¦x»80¦y»10¦w»10¦h»30¦c»b¦f»1¦
+t»rect¦x»10¦y»40¦w»30¦h»10¦c»b¦f»1¦
+t»rect¦x»50¦y»40¦w»30¦h»10¦c»b¦f»1¦
+t»rect¦x»+0¦y»50¦w»10¦h»30¦c»b¦f»1¦
+t»rect¦x»40¦y»50¦w»10¦h»30¦c»b¦f»1¦
+t»rect¦x»80¦y»50¦w»10¦h»30¦c»b¦f»1¦
+t»rect¦x»10¦y»80¦w»30¦h»10¦c»b¦f»1¦
+t»rect¦x»50¦y»80¦w»30¦h»10¦c»b¦f»1¦
+Square

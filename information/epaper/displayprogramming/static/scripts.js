@@ -44,34 +44,34 @@ function getData(path, consume) {
 
 function postData(path, text) {
     return new Promise((resolve, reject) => {
-        
+
         let array = new Uint8Array(text.length);
-        for (let a=0; a< text.length;a++) {
+        for (let a = 0; a < text.length; a++) {
             array[a] = text.charCodeAt(a);
         }
-       
+
         const req = new XMLHttpRequest();
         req.addEventListener("load", () => {
             resolve(req.responseText);
         });
-        req.open("POST", baseurl + path,false);
+        req.open("POST", baseurl + path, false);
         req.send(array);
-/*
-        fetch(baseurl + path, {
-            method: 'POST', // *GET, POST, PUT, DELETE, etc.
-            mode: 'cors', // no-cors, *cors, same-origin
-            cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-            credentials: 'same-origin', // include, *same-origin, omit
-            headers: {
-              'Content-Type': 'arraybuffer'
-              // 'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            redirect: 'follow', // manual, *follow, error
-            referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-            body: text // body data type must match "Content-Type" header
-          }).then((response)=>{
-            resolve(response.text());
-          });*/
+        /*
+                fetch(baseurl + path, {
+                    method: 'POST', // *GET, POST, PUT, DELETE, etc.
+                    mode: 'cors', // no-cors, *cors, same-origin
+                    cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+                    credentials: 'same-origin', // include, *same-origin, omit
+                    headers: {
+                      'Content-Type': 'arraybuffer'
+                      // 'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    redirect: 'follow', // manual, *follow, error
+                    referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+                    body: text // body data type must match "Content-Type" header
+                  }).then((response)=>{
+                    resolve(response.text());
+                  });*/
     });
 }
 
@@ -375,7 +375,7 @@ class DisplayOption {
                         });
                     }
                     else if (option.type == "poly") {
-
+                        console.log("option",option);
                         let button = document.createElement("button");
                         cell.appendChild(button);
                         button.setAttribute("name", Parameter[key]);
@@ -403,7 +403,7 @@ class DisplayOption {
                                     let upperText = String.fromCharCode(parseInt(upper, 2))
                                     let lowerText = String.fromCharCode(parseInt(lower, 2))
                                     text += lowerText + upperText;
-                                    console.log("PolyX",value.x,upperText,lowerText);
+                                    console.log("PolyX", value.x, upperText, lowerText);
                                     num = parseInt(value.y);
                                     if (num < 0) {
                                         num = (num >>> 0)
@@ -420,7 +420,7 @@ class DisplayOption {
                                     lower = bin.substring(len - 8, len);
                                     upperText = String.fromCharCode(parseInt(upper, 2))
                                     lowerText = String.fromCharCode(parseInt(lower, 2))
-                                    console.log("PolyY",value.y,upperText,lowerText);
+                                    console.log("PolyY", value.y, upperText, lowerText);
                                     text += lowerText + upperText;
                                     count++;
                                 }
@@ -516,7 +516,41 @@ class DisplayOption {
         return new DisplayOption();
     }
 }
+class DisplayOptionPosition extends DisplayOption {
+    constructor() {
+        super();
+        this.name = "Position";
+        this.type = "pos";
+        let options = {
+            [Parameter.x]: {
+                type: "number",
+                name: "X",
+                min: 0,
+                max: 400,
+                value: ""
+            },
+            [Parameter.y]: {
+                type: "number",
+                name: "Y",
+                min: 0,
+                max: 300,
+                value: ""
+            },
+            [Parameter.size]: {
+                type: "number",
+                name: "Rotation",
+                min: 0,
+                max: 360,
+                value: ""
+            }
+        };
+        this.options = { ...this.options, ...options };
 
+    }
+    clone() {
+        return new DisplayOptionPosition();
+    }
+}
 class DisplayOptionPixel extends DisplayOption {
     constructor() {
         super();
@@ -1031,7 +1065,7 @@ class DisplayOptionPolygone extends DisplayOption {
                 min: 1,
                 max: 15,
                 value: "",
-                readOnly:true
+                readOnly: true
             },
             [Parameter.name]: {
                 type: "poly",
@@ -1062,6 +1096,7 @@ class DisplayOptionPolygone extends DisplayOption {
 class Display {
     constructor() {
         this.options = [
+            new DisplayOptionPosition(),
             new DisplayOptionPixel(),
             new DisplayOptionCircle(),
             new DisplayOptionCircleSegment(),
@@ -1075,10 +1110,10 @@ class Display {
         this.content = [
 
         ];
-        this.text = "";
 
-        this.outputTextarea = document.getElementById("outputTextarea");
-        this.outputTextarea.value = `t»line¦x»20¦y»23¦x2»20¦y2»300¦c»b¦
+        this.outputTextareaChar = document.getElementById("outputTextareaChar");
+        this.outputTextareaHex = document.getElementById("outputTextareaHex");
+     /*   this.outputTextareaChar.value = `t»line¦x»20¦y»23¦x2»20¦y2»300¦c»b¦
 t»line¦x»40¦y»23¦x2»40¦y2»300¦c»b¦
 t»line¦x»60¦y»23¦x2»60¦y2»300¦c»b¦
 t»line¦x»0¦y»23¦x2»60¦y2»23¦c»b¦
@@ -1137,12 +1172,46 @@ t»text¦x»20¦y»0¦w»20¦h»23¦c»w¦s»20¦a»cc¦l»2¦
 t»text¦x»40¦y»0¦w»20¦h»23¦c»w¦s»20¦a»cc¦l»3¦
 t»line¦x»20¦y»0¦x2»20¦y2»23¦c»w¦
 t»line¦x»40¦y»0¦x2»40¦y2»23¦c»w¦`;
+//*/
+
+        this.outputTextareaChar.onchange = ((ev) => {
+            console.log(ev.target.value)
+            display.text = ev.target.value
+            //localStorage.setItem("Output", ev.target.value);
+        })
+        this.outputTextareaHex.onchange = ((ev) => {
+            display.text = ev.target.value
+            //localStorage.setItem("Output", ev.target.value);
+        })
 
         this.canvas = document.getElementById("displayCanvas");
         this.ctx = this.canvas.getContext("2d");
 
         this.drawId = this.ctx.createImageData(1, 1); // only do this once per page
         this.drawData = this.drawId.data;                        // only do this once per page
+    }
+
+    set text(data) {
+        
+        if (this.outputTextareaChar.value != data) {
+            console.log("Char")
+            this.outputTextareaChar.value = data;
+        }
+        let hex = "";
+        for (let a=0; a < data.length;a++) {
+            hex += "0x" + data.charCodeAt(a).toString(16).padStart(2,"0") + ", ";
+            if (data.charAt(a) == "\n") {
+                hex += "\n"
+            }
+        }
+        if (this.outputTextareaHex.value != hex) {
+            this.outputTextareaHex.value = hex;
+        }
+        localStorage.setItem("Output", data);
+    }
+
+    get text() {
+        return localStorage.getItem("Output");
     }
 
     addContent(type) {
@@ -1161,12 +1230,14 @@ t»line¦x»40¦y»0¦x2»40¦y2»23¦c»w¦`;
         this.content.forEach((element) => {
             this.text += element.getOutput() + "\n";
         });
-        this.outputTextarea.value = this.text;
+
+        
+
     }
 
     loadFromTextBox() {
-        let text = this.outputTextarea.value;
-        
+        let text = this.text;
+
         let textOption = {};
 
         let key = true;
@@ -1175,8 +1246,8 @@ t»line¦x»40¦y»0¦x2»40¦y2»23¦c»w¦`;
         let valuetext = "";
         let content = [];
         //t»line¦x»20¦y»23¦x2»20¦y2»300¦c»b¦
-        for (let a=0; a < text.length;a++) {
-            let char =text.charAt(a);
+        for (let a = 0; a < text.length; a++) {
+            let char = text.charAt(a);
             let charcode = text.charCodeAt(a);
             if (key) {
                 if (charcode == 187) {
@@ -1197,7 +1268,7 @@ t»line¦x»40¦y»0¦x2»40¦y2»23¦c»w¦`;
                     value = false;
                     textOption[keytext] = valuetext;
                     valuetext = "";
-                    keytext  = "";
+                    keytext = "";
                 }
                 else {
                     valuetext += char;
@@ -1281,8 +1352,8 @@ t»line¦x»40¦y»0¦x2»40¦y2»23¦c»w¦`;
     }
 
     setDisplay() {
-        console.log("text", this.text,this.text.length);
-        
+        console.log("text", this.text, this.text.length);
+
         return postData("/api/display/image", this.text);
 
         return new Promise((resolve) => { resolve() });
@@ -1431,16 +1502,48 @@ function LoadTextClear() {
     display.content = [];
     display.loadFromTextBox();
 }
+function LoadHexClear() {
+
+}
 
 function LoadTextAppend() {
     display.loadFromTextBox();
 }
+function ZoomDisplay(ev) {
+
+
+    let value = parseFloat(ev.target.value);
+    if (isNaN(value)) {
+        return;
+    }
+    if (value < 1) {
+        return;
+    }
+    let canvas = document.getElementById("displayCanvas");
+
+    canvas.style.transform = `scale(${value / 100})`;
+    console.log(canvas.style.transform, canvas.width, canvas.height);
+    canvas.style.borderWidth = 1 / (value / 100) + "px";
+    let displayWrapper = document.getElementById("displayWrapper");
+    displayWrapper.style.width = canvas.width * value / 100 + 5 + "px";
+    displayWrapper.style.height = canvas.height * value / 100 + 5 + "px";
+
+
+
+
+}
+
 window.onload = (() => {
 
     baseurl = "http://192.168.0.94";
     console.log(display);
 
     display.createOptionsHtml();
+
+    let text = localStorage.getItem("Output");
+    if (text != null) {
+        display.loadFromTextBox();
+    }
     display.createContentHtml();
     // display.updateDisplay();
 
@@ -1461,7 +1564,16 @@ window.onload = (() => {
             console.log("GET", text);
         });
 
-        
+
+    });
+
+    let ZoomInput = document.getElementById("ZoomInput");
+    ZoomInput.onchange = ZoomDisplay;
+
+    ZoomDisplay({
+        target: {
+            value: ZoomInput.value
+        }
     });
 
 });

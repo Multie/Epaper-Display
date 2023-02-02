@@ -41,6 +41,10 @@ enum TextAlign
     BottomRight
 };
 
+int DisplayPositionX = 0;
+int DisplayPositionY = 0;
+float DisplayScale = 1;
+
 typedef struct DisplayParameterData
 {
 #define DisplayParameterDataHold "z"
@@ -102,126 +106,146 @@ void CopyDisplayParameterData(DisplayParameterData *dest, DisplayParameterData *
     dest->align = source->align;
 }
 
+PaintColor DisplayColorToPaintColor(DisplayColor color, DisplayColor reference)
+{
+    if (color == reference)
+    {
+        return PaintColor::COLORED;
+    }
+    else
+    {
+        return PaintColor::UNCOLORED;
+    }
+}
+
+void DisplaySetPositionScale(int x, int y, float scale)
+{
+    DisplayPositionX = x;
+    DisplayPositionY = y;
+    DisplayScale = scale;
+}
+
 void DisplayDrawPixel(int x, int y, DisplayColor color)
 {
+    int localX = DisplayPositionX + (float)x * DisplayScale;
+    int localY = DisplayPositionY + (float)y * DisplayScale;
+
     if (color == DisplayColor::White)
     {
-        DisplayPaintBlack.DrawPixel(x, y, PaintColor::UNCOLORED);
-        DisplayPaintRed.DrawPixel(x, y, PaintColor::UNCOLORED);
+        DisplayPaintBlack.DrawPixel(localX, localY, PaintColor::UNCOLORED);
+        DisplayPaintRed.DrawPixel(localX, localY, PaintColor::UNCOLORED);
     }
     else if (color == DisplayColor::Black)
     {
-        DisplayPaintBlack.DrawPixel(x, y, PaintColor::COLORED);
-        DisplayPaintRed.DrawPixel(x, y, PaintColor::UNCOLORED);
+        DisplayPaintBlack.DrawPixel(localX, localY, PaintColor::COLORED);
+        DisplayPaintRed.DrawPixel(localX, localY, PaintColor::UNCOLORED);
     }
     else if (color == DisplayColor::Red)
     {
-        DisplayPaintBlack.DrawPixel(x, y, PaintColor::UNCOLORED);
-        DisplayPaintRed.DrawPixel(x, y, PaintColor::COLORED);
+        DisplayPaintBlack.DrawPixel(localX, localY, PaintColor::UNCOLORED);
+        DisplayPaintRed.DrawPixel(localX, localY, PaintColor::COLORED);
     }
 }
 void DisplayDrawLine(int x1, int y1, int x2, int y2, DisplayColor color)
 {
-    if (color == DisplayColor::White)
-    {
-        DisplayPaintBlack.DrawLine(x1, y1, x2, y2, PaintColor::UNCOLORED);
-        DisplayPaintRed.DrawLine(x1, y1, x2, y2, PaintColor::UNCOLORED);
-    }
-    else if (color == DisplayColor::Black)
-    {
-        DisplayPaintBlack.DrawLine(x1, y1, x2, y2, PaintColor::COLORED);
-        DisplayPaintRed.DrawLine(x1, y1, x2, y2, PaintColor::UNCOLORED);
-    }
-    else if (color == DisplayColor::Red)
-    {
-        DisplayPaintBlack.DrawLine(x1, y1, x2, y2, PaintColor::UNCOLORED);
-        DisplayPaintRed.DrawLine(x1, y1, x2, y2, PaintColor::COLORED);
-    }
+    int localX1 = DisplayPositionX + (float)x1 * DisplayScale;
+    int localY1 = DisplayPositionY + (float)y1 * DisplayScale;
+    int localX2 = DisplayPositionX + (float)x2 * DisplayScale;
+    int localY2 = DisplayPositionY + (float)y2 * DisplayScale;
+    PaintColor blackColor = DisplayColorToPaintColor(color, DisplayColor::Black);
+    PaintColor redColor = DisplayColorToPaintColor(color, DisplayColor::Red);
+
+    DisplayPaintBlack.DrawLine(localX1, localY1, localX2, localY2, blackColor);
+    DisplayPaintRed.DrawLine(localX1, localY1, localX2, localY2, redColor);
 }
 void DisplayDrawCircle(int x, int y, int radius, bool fill, DisplayColor color)
 {
-    if (color == DisplayColor::White)
+    int localX = DisplayPositionX + (float)x * DisplayScale;
+    int localY = DisplayPositionY + (float)y * DisplayScale;
+    int localRadius = (float)radius * DisplayScale;
+
+    PaintColor blackColor = DisplayColorToPaintColor(color, DisplayColor::Black);
+    PaintColor redColor = DisplayColorToPaintColor(color, DisplayColor::Red);
+
+    if (fill)
     {
-        if (fill)
-        {
-            DisplayPaintBlack.DrawFilledCircle(x, y, radius, PaintColor::UNCOLORED);
-            DisplayPaintRed.DrawFilledCircle(x, y, radius, PaintColor::UNCOLORED);
-        }
-        else
-        {
-            DisplayPaintBlack.DrawCircle(x, y, radius, PaintColor::UNCOLORED);
-            DisplayPaintRed.DrawCircle(x, y, radius, PaintColor::UNCOLORED);
-        }
+        DisplayPaintBlack.DrawFilledCircle(localX, localY, localRadius, blackColor);
+        DisplayPaintRed.DrawFilledCircle(localX, localY, localRadius, redColor);
     }
-    else if (color == DisplayColor::Black)
+    else
     {
-        if (fill)
-        {
-            DisplayPaintBlack.DrawFilledCircle(x, y, radius, PaintColor::COLORED);
-            DisplayPaintRed.DrawFilledCircle(x, y, radius, PaintColor::UNCOLORED);
-        }
-        else
-        {
-            DisplayPaintBlack.DrawCircle(x, y, radius, PaintColor::COLORED);
-            DisplayPaintRed.DrawCircle(x, y, radius, PaintColor::UNCOLORED);
-        }
-    }
-    else if (color == DisplayColor::Red)
-    {
-        if (fill)
-        {
-            DisplayPaintBlack.DrawFilledCircle(x, y, radius, PaintColor::UNCOLORED);
-            DisplayPaintRed.DrawFilledCircle(x, y, radius, PaintColor::COLORED);
-        }
-        else
-        {
-            DisplayPaintBlack.DrawCircle(x, y, radius, PaintColor::UNCOLORED);
-            DisplayPaintRed.DrawCircle(x, y, radius, PaintColor::COLORED);
-        }
+        DisplayPaintBlack.DrawCircle(localX, localY, localRadius, blackColor);
+        DisplayPaintRed.DrawCircle(localX, localY, localRadius, redColor);
     }
 }
 void DisplayDrawRectangle(int x, int y, int width, int height, bool fill, DisplayColor color)
 {
-    if (color == DisplayColor::White)
+    int localX1 = DisplayPositionX + (float)x * DisplayScale;
+    int localY1 = DisplayPositionY + (float)y * DisplayScale;
+    int localX2 = localX1 + (float)width * DisplayScale;
+    int localY2 = localY1 + (float)height * DisplayScale;
+
+    PaintColor blackColor = DisplayColorToPaintColor(color, DisplayColor::Black);
+    PaintColor redColor = DisplayColorToPaintColor(color, DisplayColor::Red);
+
+    if (fill)
     {
-        if (fill)
-        {
-            DisplayPaintBlack.DrawFilledRectangle(x, y, x + width, y + height, PaintColor::UNCOLORED);
-            DisplayPaintRed.DrawFilledRectangle(x, y, x + width, y + height, PaintColor::UNCOLORED);
-        }
-        else
-        {
-            DisplayPaintBlack.DrawRectangle(x, y, x + width, y + height, PaintColor::UNCOLORED);
-            DisplayPaintRed.DrawRectangle(x, y, x + width, y + height, PaintColor::UNCOLORED);
-        }
+        DisplayPaintBlack.DrawFilledRectangle(localX1, localY1, localX2, localY2, blackColor);
+        DisplayPaintRed.DrawFilledRectangle(localX1, localY1, localX2, localY2, redColor);
     }
-    else if (color == DisplayColor::Black)
+    else
     {
-        if (fill)
-        {
-            DisplayPaintBlack.DrawFilledRectangle(x, y, x + width, y + height, PaintColor::COLORED);
-            DisplayPaintRed.DrawFilledRectangle(x, y, x + width, y + height, PaintColor::UNCOLORED);
-        }
-        else
-        {
-            DisplayPaintBlack.DrawRectangle(x, y, x + width, y + height, PaintColor::COLORED);
-            DisplayPaintRed.DrawRectangle(x, y, x + width, y + height, PaintColor::UNCOLORED);
-        }
-    }
-    else if (color == DisplayColor::Red)
-    {
-        if (fill)
-        {
-            DisplayPaintBlack.DrawFilledRectangle(x, y, x + width, y + height, PaintColor::UNCOLORED);
-            DisplayPaintRed.DrawFilledRectangle(x, y, x + width, y + height, PaintColor::COLORED);
-        }
-        else
-        {
-            DisplayPaintBlack.DrawRectangle(x, y, x + width, y + height, PaintColor::UNCOLORED);
-            DisplayPaintRed.DrawRectangle(x, y, x + width, y + height, PaintColor::COLORED);
-        }
+        DisplayPaintBlack.DrawRectangle(localX1, localY1, localX2, localY2, blackColor);
+        DisplayPaintRed.DrawRectangle(localX1, localY1, localX2, localY2, redColor);
     }
 }
+void DisplayDrawCircleSegment(int x, int y, int startRadius, int endRadius, int startAngle, int endAngle, bool fill, DisplayColor color)
+{
+    int localX = DisplayPositionX + (float)x * DisplayScale;
+    int localY = DisplayPositionY + (float)y * DisplayScale;
+    int localStartRadius = (float)startRadius * DisplayScale;
+    int localEndAngle = (float)endAngle * DisplayScale;
+    PaintColor blackColor = DisplayColorToPaintColor(color, DisplayColor::Black);
+    PaintColor redColor = DisplayColorToPaintColor(color, DisplayColor::Red);
+    if (fill)
+    {
+        DisplayPaintBlack.DrawFilledCircleSegment(localX, localY, localStartRadius, localEndAngle, startAngle, endAngle, blackColor);
+        DisplayPaintRed.DrawFilledCircleSegment(localX, localY, localStartRadius, localEndAngle, startAngle, endAngle, redColor);
+    }
+    else
+    {
+        DisplayPaintBlack.DrawCircleSegment(localX, localY, localStartRadius, startAngle, endAngle, blackColor);
+        DisplayPaintRed.DrawCircleSegment(localX, localY, localStartRadius, startAngle, endAngle, redColor);
+    }
+}
+void DisplayDrawFilledPolygone(int *arrX, int *arrY, int count, bool fill, DisplayColor color)
+{
+    int localXs[count];
+    int localYs[count];
+    PaintColor blackColor = DisplayColorToPaintColor(color, DisplayColor::Black);
+    PaintColor redColor = DisplayColorToPaintColor(color, DisplayColor::Red);
+
+    for (int a = 0; a < count; a++)
+    {
+        localXs[a] = DisplayPositionX + (float)arrX[a] * DisplayScale;
+        localYs[a] = DisplayPositionY + (float)arrY[a] * DisplayScale;
+        if (!fill)
+        {
+            int nextA = a + 1;
+            if (nextA >= count) {
+                nextA = 0;
+            }
+            DisplayPaintBlack.DrawLine(localXs[a], localYs[a], localXs[nextA], localYs[nextA], blackColor);
+            DisplayPaintRed.DrawLine(localXs[a], localYs[a], localXs[nextA], localYs[nextA], redColor);
+        }
+    }
+    if (fill)
+    {
+        DisplayPaintBlack.DrawFilledPolygone(localXs, localYs, count, blackColor);
+        DisplayPaintRed.DrawFilledPolygone(localXs, localYs, count, redColor);
+    }
+}
+
 void DisplayDrawText(int x, int y, int width, int height, DisplayColor color, int size, TextAlign align, String text)
 {
     int textX = 0;
@@ -331,68 +355,13 @@ void DisplayDrawImage(int x, int y, int width, int height, DisplayColor color)
     }
 }
 
-void DisplayDrawCircleSegment(int x, int y, int startRadius, int endRadius, int startAngle, int endAngle, bool fill, DisplayColor color)
-{
-    if (fill)
-    {
-        if (color == DisplayColor::White)
-        {
-            DisplayPaintBlack.DrawFilledCircleSegment(x, y, startRadius, endRadius, startAngle, endAngle, PaintColor::UNCOLORED);
-            DisplayPaintRed.DrawFilledCircleSegment(x, y, startRadius, endRadius, startAngle, endAngle, PaintColor::UNCOLORED);
-        }
-        else if (color == DisplayColor::Black)
-        {
-            DisplayPaintBlack.DrawFilledCircleSegment(x, y, startRadius, endRadius, startAngle, endAngle, PaintColor::COLORED);
-            DisplayPaintRed.DrawFilledCircleSegment(x, y, startRadius, endRadius, startAngle, endAngle, PaintColor::UNCOLORED);
-        }
-        else if (color == DisplayColor::Red)
-        {
-            DisplayPaintBlack.DrawFilledCircleSegment(x, y, startRadius, endRadius, startAngle, endAngle, PaintColor::UNCOLORED);
-            DisplayPaintRed.DrawFilledCircleSegment(x, y, startRadius, endRadius, startAngle, endAngle, PaintColor::COLORED);
-        }
-    }
-    else
-    {
-        if (color == DisplayColor::White)
-        {
-            DisplayPaintBlack.DrawCircleSegment(x, y, startRadius, startAngle, endAngle, PaintColor::UNCOLORED);
-            DisplayPaintRed.DrawCircleSegment(x, y, startRadius, startAngle, endAngle, PaintColor::UNCOLORED);
-        }
-        else if (color == DisplayColor::Black)
-        {
-            DisplayPaintBlack.DrawCircleSegment(x, y, startRadius, startAngle, endAngle, PaintColor::COLORED);
-            DisplayPaintRed.DrawCircleSegment(x, y, startRadius, startAngle, endAngle, PaintColor::UNCOLORED);
-        }
-        else if (color == DisplayColor::Red)
-        {
-            DisplayPaintBlack.DrawCircleSegment(x, y, startRadius, startAngle, endAngle, PaintColor::UNCOLORED);
-            DisplayPaintRed.DrawCircleSegment(x, y, startRadius, startAngle, endAngle, PaintColor::COLORED);
-        }
-    }
-}
-
-void DisplayDrawFilledPolygone(int *arrX, int *arrY, int count, DisplayColor color)
-{
-    if (color == DisplayColor::White)
-    {
-        DisplayPaintBlack.DrawFilledPolygone(arrX, arrY, count, PaintColor::UNCOLORED);
-        DisplayPaintRed.DrawFilledPolygone(arrX, arrY, count, PaintColor::UNCOLORED);
-    }
-    else if (color == DisplayColor::Black)
-    {
-        DisplayPaintBlack.DrawFilledPolygone(arrX, arrY, count, PaintColor::COLORED);
-        DisplayPaintRed.DrawFilledPolygone(arrX, arrY, count, PaintColor::UNCOLORED);
-    }
-    else if (color == DisplayColor::Red)
-    {
-        DisplayPaintBlack.DrawFilledPolygone(arrX, arrY, count, PaintColor::UNCOLORED);
-        DisplayPaintRed.DrawFilledPolygone(arrX, arrY, count, PaintColor::COLORED);
-    }
-}
-
 void DisplayDrawParameter(DisplayParameterData *param)
 {
-    if (strcmp(param->type, "pixel") == 0)
+    if (strcmp(param->type, "pos") == 0)
+    {
+        DisplaySetPositionScale(param->x, param->y,(float)param->size/100.0);
+    }
+    else if (strcmp(param->type, "pixel") == 0)
     {
         Debug("DisplayDraw", String(param->type));
         DisplayDrawPixel(param->x, param->y, param->color);
@@ -407,21 +376,6 @@ void DisplayDrawParameter(DisplayParameterData *param)
         Debug("DisplayDraw", String(param->type));
         DisplayDrawCircle(param->x, param->y, param->radius, param->fill, param->color);
     }
-    else if (strcmp(param->type, "rect") == 0)
-    {
-        Debug("DisplayDraw", String(param->type));
-        DisplayDrawRectangle(param->x, param->y, param->width, param->height, param->fill, param->color);
-    }
-    else if (strcmp(param->type, "text") == 0)
-    {
-        Debug("DisplayDraw", String(param->type));
-        DisplayDrawText(param->x, param->y, param->width, param->height, param->color, param->size, param->align, String(param->label));
-    }
-    else if (strcmp(param->type, "value") == 0)
-    {
-        Debug("DisplayDraw", String(param->type));
-        DisplayDrawText(param->x, param->y, param->width, param->height, param->color, param->size, param->align, String(param->name));
-    }
     else if (strcmp(param->type, "cicseg") == 0)
     {
         Debug("DisplayDraw", String(param->type));
@@ -435,6 +389,11 @@ void DisplayDrawParameter(DisplayParameterData *param)
             param->fill,   //  bool fill,
             param->color   // DisplayColor color
         );
+    }
+    else if (strcmp(param->type, "rect") == 0)
+    {
+        Debug("DisplayDraw", String(param->type));
+        DisplayDrawRectangle(param->x, param->y, param->width, param->height, param->fill, param->color);
     }
     else if (strcmp(param->type, "poly") == 0)
     {
@@ -455,10 +414,21 @@ void DisplayDrawParameter(DisplayParameterData *param)
             arrX,        // int x,
             arrY,        // int y,
             param->size, // int endRadius,
+            param->fill,
             param->color // DisplayColor color
         );
     }
-
+    
+    else if (strcmp(param->type, "text") == 0)
+    {
+        Debug("DisplayDraw", String(param->type));
+        DisplayDrawText(param->x, param->y, param->width, param->height, param->color, param->size, param->align, String(param->label));
+    }
+    else if (strcmp(param->type, "value") == 0)
+    {
+        Debug("DisplayDraw", String(param->type));
+        DisplayDrawText(param->x, param->y, param->width, param->height, param->color, param->size, param->align, String(param->name));
+    }
     else
     {
         Debug("DisplayDrawNone", String(param->type));

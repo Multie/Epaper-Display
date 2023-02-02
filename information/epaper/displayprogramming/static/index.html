@@ -26,29 +26,59 @@
                         <input id="UrlInput">
                     </div>
                 </div>
+                <div class="item">
+                    <div class="itemLabel">
+                        Zoom
+                    </div>
+                    <div class="itemValue">
+                        <input id="ZoomInput" type="number" min="1" max="500">
+                    </div>
+                </div>
             </div>
         </div>
         <div class="center">
-            <div class="displaycanvas">
-                <canvas id="displayCanvas" width="400" height="300"></canvas>
+            <div class="displayContainer">
+                <div id="displayWrapper">
+                    <canvas id="displayCanvas" class="displayCanvas" width="400" height="300"></canvas>
+                </div>
+
+
             </div>
             <div class="itemGroup itemOutput">
-
                 <div class="item">
-                    <div class="itemLabel">
-                        Output
-                    </div>
                     <div class="itemValue">
-                        <button onclick="LoadTextClear()">Load Clear</button>
-                        <button onclick="LoadTextAppend()">Load Append</button>
                         <button onclick="Unhide()">Unhide</button>
                         <button onclick="UpdateDisplay()">Refresh</button>
                         <button onclick="UploadDisplayData()">Set</button>
                     </div>
                 </div>
-                <div class="item">   
+                <div class="item">
+                    <div class="itemLabel">
+                        Output Char
+                    </div>
                     <div class="itemValue wide">
-                        <textarea class="textarea" id="outputTextarea"></textarea>
+
+                        <button onclick="LoadTextClear()">Load</button>
+                    </div>
+                </div>
+                <div class="item">
+                    <div class="itemValue wide">
+                        <textarea class="textarea" id="outputTextareaChar"></textarea>
+                    </div>
+                </div>
+                <div class="item">
+                    <div class="itemLabel">
+                        Output Hex
+
+                    </div>
+                    <div class="itemValue wide">
+                        <button onclick="LoadHexClear()">Load</button>
+                    </div>
+                </div>
+                <div class="item">
+
+                    <div class="itemValue wide">
+                        <textarea class="textarea" id="outputTextareaHex"></textarea>
                     </div>
                 </div>
             </div>
