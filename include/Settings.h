@@ -22,6 +22,7 @@
 
 #include <Arduino.h>
 #include <Preferences.h>
+#include "Secrets.h"
 Preferences preferences;
 
 #pragma region Battery
@@ -60,8 +61,8 @@ SettingsStruct Settings;
 
 void setSettings()
 {
-    strcpy((Settings.Wifi.Ssid), "WIFI_SSID_REDACTED");
-    strcpy((Settings.Wifi.Password), "WIFI_PASSWORD_REDACTED");
+    strcpy((Settings.Wifi.Ssid), WifiSecretSsid);
+    strcpy((Settings.Wifi.Password), WifiSecretPassword);
     Settings.Wifi.ConnectionTrys = 25;
     Settings.Time.Syncinterval = 3600;
 }

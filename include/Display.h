@@ -159,15 +159,31 @@ void DisplaySetupServer()
         [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
         {
             Debug("HttpLen", len);
+            // Draw-Skript ist Text, kein Framebuffer-Dump: alles ueber dieser Groesse ist
+            // garantiert Unsinn/Angriff und wuerde sonst ungebremst Heap allokieren.
+            const size_t MaxUploadSize = 32768;
+            if (total == 0 || total > MaxUploadSize || index + len > total)
+            {
+                Debug("Ota", "DisplayUploadRejected");
+                request->send(400, "text/plain", "Payload invalid or too large");
+                return;
+            }
             if (index == 0)
             {
-                postData = (char*) malloc(total);
-                postDataSize = total;
+                if (postData != nullptr)
+                {
+                    free(postData);
+                    postData = nullptr;
+                }
+                postData = (char *)malloc(total);
+                postDataSize = (postData != nullptr) ? total : 0;
             }
-            for (int a = 0; a <index + len; a++)
+            if (postData == nullptr)
             {
-                postData[index + a] = (char)data[a];
+                request->send(500, "text/plain", "Out of memory");
+                return;
             }
+            memcpy(postData + index, data, len);
             if (index + len == total)
             {
                 AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "");

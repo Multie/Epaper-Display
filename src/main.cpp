@@ -28,8 +28,17 @@ AsyncWebServer server(80);
 #include "Display.h"
 #include "Sleep.h"
 #include "OtaUpdate.h"
+#include "EpaperContent.h"
 
 #include "sensorBattery.h"
+
+// Wie lange nach dem Aufwachen der lokale Webserver (/api/display/image, fuer
+// manuelles Debugging) erreichbar bleibt, bevor wieder in den Deep Sleep geht.
+#define EpaperActiveWindowSeconds 10
+// Zykluszeit zwischen zwei Display-Refreshes/HA-Abfragen.
+#define EpaperWakeIntervalSeconds (10 * 60)
+
+int activeSeconds = 0;
 
 void startup()
 {
@@ -41,13 +50,15 @@ void startup()
 
   PowerStartup();
   SensorBatteryStartup();
+  SensorBatteryReadState();
 
   DisplayStartup();
 
 #ifdef TestWebServer
   connectWifi();
 
-  OtaCheckAndUpdate();
+  OtaCheckAndUpdate(State.Battery.Percent);
+  EpaperContentUpdate(State.Battery.Percent, State.Battery.Voltage);
 
   server.begin();
 #endif
@@ -61,8 +72,17 @@ void wakeup()
 
   PowerWakeup();
   SensorBatteryWakeup();
+  SensorBatteryReadState();
 
   DisplayWakeup();
+
+#ifdef TestWebServer
+  connectWifi();
+
+  EpaperContentUpdate(State.Battery.Percent, State.Battery.Voltage);
+
+  server.begin();
+#endif
 }
 
 void update()
@@ -92,7 +112,7 @@ void shutdown()
 
   TransientShutdown();
   Debug("Shutdown", "Active");
-  StartDeepSleep(10 * 1e6);
+  StartDeepSleep((uint64_t)EpaperWakeIntervalSeconds * 1000000ull);
 }
 
 void shutdown();
@@ -117,5 +137,9 @@ void setup()
 void loop()
 {
   update();
-  // shutdown();
+  activeSeconds++;
+  if (activeSeconds >= EpaperActiveWindowSeconds)
+  {
+    shutdown();
+  }
 }

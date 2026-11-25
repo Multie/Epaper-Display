@@ -120,6 +120,10 @@ void setupPins()
 
     pinMode(I2cSclPin, INPUT);
     pinMode(I2cSdaPin, INPUT);
+
+    // LC709203F ALARMB ist open-drain; Board hat laut Hersteller schon einen
+    // Pull-up, INPUT_PULLUP hier ist nur ein zusaetzliches Sicherheitsnetz.
+    pinMode(BatteryLowAlarmPin, INPUT_PULLUP);
 }
 
 #endif

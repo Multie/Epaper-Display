@@ -21,38 +21,66 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include <HTTPUpdate.h>
+#include <Update.h>
 #include <ArduinoJson.h>
 #include "Debug.h"
 
 // Bei jedem Firmware-Release von Hand erhoehen
 #define FirmwareVersionCode 1
 
-// Gleiches Manifest-Schema wie ColorApp (versionCode/versionName/binUrl/notes),
-// gehostet auf der gleichen statischen Ablage wie die APK-OTA-Datei.
+// Gleiches Manifest-Schema wie ColorApp (versionCode/versionName/apkUrl/notes),
+// hier zusaetzlich Pflichtfeld "md5" (32 Hex-Zeichen) zur Integritaetspruefung
+// der .bin VOR dem Flashen - ohne das wuerde jeder, der den Netzwerkpfad
+// kontrolliert, beliebigen Code aufs Geraet bringen koennen.
 #define OtaManifestUrl "https://home.your-tailnet.ts.net/epaper-display/version.json"
 
-void OtaCheckAndUpdate()
+// Unter dieser Akku-Prozentzahl wird kein OTA-Flash versucht - ein Brownout
+// waehrend des Schreibens auf dieses batteriebetriebene Geraet kann es sonst
+// ohne USB-Reflash-Moeglichkeit bricken.
+#define OtaMinBatteryPercent 30.0
+
+bool OtaIsValidMd5(const String &value)
+{
+    if (value.length() != 32)
+    {
+        return false;
+    }
+    for (size_t i = 0; i < value.length(); i++)
+    {
+        if (!isxdigit((unsigned char)value[i]))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+void OtaCheckAndUpdate(float batteryPercent)
 {
     if (WiFi.status() != WL_CONNECTED)
     {
         return;
     }
+    if (batteryPercent < OtaMinBatteryPercent)
+    {
+        Debug("Ota", "SkippedLowBattery");
+        return;
+    }
 
-    HTTPClient http;
-    http.begin(OtaManifestUrl);
-    int httpCode = http.GET();
-    if (httpCode != HTTP_CODE_OK)
+    HTTPClient manifestHttp;
+    manifestHttp.begin(OtaManifestUrl);
+    int manifestCode = manifestHttp.GET();
+    if (manifestCode != HTTP_CODE_OK)
     {
         Debug("Ota", "ManifestRequestFailed");
-        http.end();
+        manifestHttp.end();
         return;
     }
 
     JsonDocument manifest;
-    DeserializationError error = deserializeJson(manifest, http.getStream());
-    http.end();
-    if (error)
+    DeserializationError parseError = deserializeJson(manifest, manifestHttp.getStream());
+    manifestHttp.end();
+    if (parseError)
     {
         Debug("Ota", "ManifestParseFailed");
         return;
@@ -60,30 +88,62 @@ void OtaCheckAndUpdate()
 
     int remoteVersionCode = manifest["versionCode"] | 0;
     String binUrl = manifest["binUrl"].as<String>();
+    String expectedMd5 = manifest["md5"].as<String>();
+    expectedMd5.toLowerCase();
 
     if (remoteVersionCode <= FirmwareVersionCode || binUrl.length() == 0)
     {
         Debug("Ota", "UpToDate");
         return;
     }
+    if (!OtaIsValidMd5(expectedMd5))
+    {
+        // Kein/ungueltiger Hash im Manifest -> lieber kein Flash als ein unverifiziertes Image
+        Debug("Ota", "RejectedMissingMd5");
+        return;
+    }
 
     Debug("Ota", "UpdateAvailable");
-    WiFiClient client;
-    httpUpdate.rebootOnUpdate(true);
-    t_httpUpdate_return result = httpUpdate.update(client, binUrl);
 
-    switch (result)
+    HTTPClient binHttp;
+    binHttp.begin(binUrl);
+    int binCode = binHttp.GET();
+    int contentLength = binHttp.getSize();
+    if (binCode != HTTP_CODE_OK || contentLength <= 0)
     {
-    case HTTP_UPDATE_FAILED:
-        Debug("Ota", "UpdateFailed");
-        break;
-    case HTTP_UPDATE_NO_UPDATES:
-        Debug("Ota", "NoUpdates");
-        break;
-    case HTTP_UPDATE_OK:
-        Debug("Ota", "UpdateOk");
-        break;
+        Debug("Ota", "BinRequestFailed");
+        binHttp.end();
+        return;
     }
+
+    if (!Update.begin(contentLength))
+    {
+        Debug("Ota", "UpdateBeginFailed");
+        binHttp.end();
+        return;
+    }
+    Update.setMD5(expectedMd5.c_str());
+
+    WiFiClient *stream = binHttp.getStreamPtr();
+    size_t written = Update.writeStream(*stream);
+    binHttp.end();
+
+    if (written != (size_t)contentLength)
+    {
+        Debug("Ota", "WriteIncomplete");
+        Update.abort();
+        return;
+    }
+
+    // end(true) prueft u.a. die zuvor gesetzte MD5 gegen das geschriebene Image
+    if (!Update.end(true))
+    {
+        Debug("Ota", "VerifyFailed:" + String(Update.getError()));
+        return;
+    }
+
+    Debug("Ota", "UpdateOkRebooting");
+    ESP.restart();
 }
 
 #endif

@@ -1,0 +1,14 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Epaper Display einrichten",
+        "data": {
+          "weather_entity": "Wetter-Entity",
+          "calendar_entities": "Kalender (Termine heute)",
+          "shopping_todo_entity": "Einkaufsliste (Todo-Entity)"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "domain": "epaper_display",
+  "name": "Epaper Display",
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://github.com/Multie/Epaper-Display",
+  "iot_class": "local_push",
+  "version": "0.1.0",
+  "requirements": []
+}

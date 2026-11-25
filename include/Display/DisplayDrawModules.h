@@ -93,17 +93,7 @@ typedef struct DisplayParameterData
 
 void CopyDisplayParameterData(DisplayParameterData *dest, DisplayParameterData *source)
 {
-    strcpy(dest->type, source->type);
-    dest->x = source->x;
-    dest->y = source->y;
-    dest->x2 = source->x2;
-    dest->y2 = source->y2;
-    dest->color = source->color;
-    dest->radius = source->radius;
-    strcpy(dest->label, source->label);
-    dest->x = source->x;
-    dest->fill = source->fill;
-    dest->align = source->align;
+    memcpy(dest, source, sizeof(DisplayParameterData));
 }
 
 PaintColor DisplayColorToPaintColor(DisplayColor color, DisplayColor reference)
@@ -399,6 +389,14 @@ void DisplayDrawParameter(DisplayParameterData *param)
     {
         Debug("DisplayDraw", String(param->type));
 
+        // param->size kommt vom Netzwerk; points[] fasst nur DisplayParameterDataPointsLength/2
+        // Punkte (je x+y), alles darueber waere Stack-/Buffer-Overread.
+        if (param->size <= 0 || param->size > DisplayParameterDataPointsLength / 2)
+        {
+            Debug("DisplayDrawPolyRejected", param->size);
+            return;
+        }
+
         int arrX[param->size] = {};
         int arrY[param->size] = {};
 
@@ -504,7 +502,7 @@ void DisplayParseText(char *text, int length)
                 CopyDisplayParameterData(&DisplayParameterOld, &parameter);
                 parameter = {};
             }
-            else
+            else if (keyTextIndex < DisplayParameterDataLabelLength - 1)
             {
                 keyText[keyTextIndex] = chararacter;
                 keyTextIndex++;
@@ -514,8 +512,11 @@ void DisplayParseText(char *text, int length)
         {
             if (justread > 0)
             {
-                valueText[valueTextIndex] = chararacter;
-                valueTextIndex++;
+                if (valueTextIndex < DisplayParameterDataLabelLength - 1)
+                {
+                    valueText[valueTextIndex] = chararacter;
+                    valueTextIndex++;
+                }
                 justread--;
             }
             else if (chararacter == 166)
@@ -538,7 +539,8 @@ void DisplayParseText(char *text, int length)
                 {
                     Debug("TypeValue", valueText);
                     Debug("TypeParm", parameter.type);
-                    strcpy(parameter.type, valueText);
+                    strncpy(parameter.type, valueText, sizeof(parameter.type) - 1);
+                    parameter.type[sizeof(parameter.type) - 1] = 0;
                 }
                 // Position x
                 else if (strcmp(keyText, DisplayParameterDataX) == 0)
@@ -675,7 +677,8 @@ void DisplayParseText(char *text, int length)
                     }
                     else
                     {
-                        strcpy(parameter.label, valueText);
+                        strncpy(parameter.label, valueText, sizeof(parameter.label) - 1);
+                        parameter.label[sizeof(parameter.label) - 1] = 0;
                     }
                 }
                 // Fill
@@ -736,7 +739,7 @@ void DisplayParseText(char *text, int length)
                 keyTextIndex = 0;
                 valueTextIndex = 0;
             }
-            else
+            else if (valueTextIndex < DisplayParameterDataLabelLength - 1)
             {
                 valueText[valueTextIndex] = chararacter;
                 valueTextIndex++;
