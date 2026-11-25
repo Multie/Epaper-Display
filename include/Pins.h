@@ -83,14 +83,6 @@ IOVn        # Tx        #
 #define PowerPin IO5
 // Battery
 #define BatteryLowAlarmPin IO19
-// Buttons
-#define Button1Pin IOVp
-#define Button2Pin IOVn
-#define Button3Pin IO35
-#define Button4Pin IO34
-#define Button5Pin IO33
-#define Button6Pin IO25
-#define Button7Pin IO13
 // SPI
 #define SpiMosiPin IO23
 // #define SpiMisoPin IO19
@@ -98,30 +90,19 @@ IOVn        # Tx        #
 // Display
 #define DisplayCsPin IO4
 #define DisplayDcPin IO27
-#define DisplayRstPin IO12
+// Reset liegt bewusst nicht auf IO12: Strapping-Pin (Boot schlaegt fehl wenn
+// beim Start HIGH), und auf dem Board/Header direkt neben der Vbat-Leitung
+// zur Fuel Gauge -> Kurzschluss-/Uebersprech-Risiko hat den Boot zerschossen.
+#define DisplayRstPin IO14
 #define DisplayBusyPin IO17
-// Slider
-#define SliderPin IO32
-// I2C
+// I2C (Fuel Gauge)
 #define I2cSclPin IO22
 #define I2cSdaPin IO21
-// Gesturecontrol
-#define GesturecontrolInterruptPin IO26
-// Beeper
-#define BeeperPin IO2
 
 void setupPins()
 {
     pinMode(PowerPin, OUTPUT);
     digitalWrite(PowerPin, LOW);
-
-    pinMode(Button1Pin, INPUT);
-    pinMode(Button2Pin, INPUT);
-    pinMode(Button3Pin, INPUT);
-    pinMode(Button4Pin, INPUT);
-    pinMode(Button5Pin, INPUT);
-    pinMode(Button6Pin, INPUT);
-    pinMode(Button7Pin, INPUT);
 
     pinMode(SpiMosiPin, OUTPUT);
     digitalWrite(SpiMosiPin, LOW);
@@ -139,11 +120,6 @@ void setupPins()
 
     pinMode(I2cSclPin, INPUT);
     pinMode(I2cSdaPin, INPUT);
-
-    pinMode(GesturecontrolInterruptPin, INPUT);
-
-    pinMode(BeeperPin, OUTPUT);
-    digitalWrite(BeeperPin, LOW);
 }
 
 #endif

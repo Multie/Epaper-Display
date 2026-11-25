@@ -26,24 +26,6 @@ typedef struct TransientBattery {
 } TransientBattery;
 #pragma endregion
 
-#pragma region Buttons
-typedef struct TransientButtons {
-
-} TransientButtons;
-#pragma endregion
-
-#pragma region Gesture
-typedef struct TransientGesture {
-    bool Active;
-} TransientGesture;
-#pragma endregion
-
-#pragma region Slider
-typedef struct TransientSlider {
-
-} TransientSlider;
-#pragma endregion
-
 #pragma region Time
 
 typedef struct TransientTime {
@@ -56,11 +38,6 @@ typedef struct TransientTime {
 typedef struct __attribute__((packed)) TransientData
 {
     TransientBattery Battery;
-    TransientButtons Buttons;
-    TransientGesture Gesture;
-    TransientSlider Slider;
-
-
     TransientTime Time;
     uint64_t Checksum;
 } TransientData;

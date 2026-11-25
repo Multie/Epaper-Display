@@ -25,40 +25,6 @@
 
 
 
-void setupSleepWakeup()
-{
-    uint64_t PinMask = 0; // Button1Pin | Button2Pin | Button3Pin | Button4Pin | Button5Pin | Button6Pin | Button7Pin;
-    PinMask |= (uint64_t)1 << (int)Button1Pin;
-    PinMask |= (uint64_t)1 << (int)Button2Pin;
-    PinMask |= (uint64_t)1 << (int)Button3Pin;
-    PinMask |= (uint64_t)1 << (int)Button4Pin;
-    PinMask |= (uint64_t)1 << (int)Button5Pin;
-    PinMask |= (uint64_t)1 << (int)Button6Pin;
-    PinMask |= (uint64_t)1 << (int)Button7Pin;
-    //PinMask |= (uint64_t)1 << (int)GesturecontrolInterruptPin;
-
-    String line1 = "";
-    String line2 = "";
-
-
-    
-  /*  int b = 0;
-    for (int a = 0; a < 64; a++)
-    {
-        line1 += String(b);
-        b++;
-        if (b == 10) {
-            b = 0;
-        }
-        line2 += String((int) ((PinMask >> a) & 1));
-    }
-    Serial.println("PinMask:");
-    Serial.println(line1);
-    Serial.println(line2);*/
-
-    esp_sleep_enable_ext1_wakeup(PinMask, ESP_EXT1_WAKEUP_ANY_HIGH);
-}
-
 /*
  * Active: ESP32Core, ULP Coprocessor, RTC
  * Paused:

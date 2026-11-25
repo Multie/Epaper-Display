@@ -26,13 +26,10 @@ AsyncWebServer server(80);
 #include "Power.h"
 #include "TimeSync.h"
 #include "Display.h"
-#include "Beeper.h"
 #include "Sleep.h"
+#include "OtaUpdate.h"
 
-#include "sensorButtons.h"
-#include "sensorSlider.h"
 #include "sensorBattery.h"
-#include "sensorGesture.h"
 
 void startup()
 {
@@ -43,16 +40,14 @@ void startup()
   TransientStartup();
 
   PowerStartup();
-  SensorButtonsStartup();
-  SensorSliderStartup();
   SensorBatteryStartup();
-  SensorGestureStartup();
 
-  BeeperStartup();
   DisplayStartup();
 
 #ifdef TestWebServer
   connectWifi();
+
+  OtaCheckAndUpdate();
 
   server.begin();
 #endif
@@ -65,12 +60,8 @@ void wakeup()
   TransientWakeup();
 
   PowerWakeup();
-  SensorButtonsWakeup();
-  SensorSliderWakeup();
   SensorBatteryWakeup();
-  SensorGestureWakeup();
 
-  BeeperWakeup();
   DisplayWakeup();
 }
 
@@ -79,14 +70,10 @@ void update()
   PowerUpdate();
   TransientUpdate();
   // Input
-  SensorButtonsUpdate();
-  SensorSliderUpdate();
   SensorBatteryUpdate();
-  SensorGestureUpdate();
 
   TimeSyncUpdate();
   // Output
-  BeeperUpdate();
   DisplayUpdate();
 
  // Debug("Now", UniversalTime::Now().toISO8601());
@@ -97,19 +84,14 @@ void update()
 void shutdown()
 {
   Debug("Shutdown", "Start");
-  SensorGestureShutdown();
   SensorBatteryShutdown();
-  SensorSliderShutdown();
-  SensorButtonsShutdown();
 
   TimeSyncShutdown();
-  BeeperShutdown();
   DisplayShutdown();
   PowerShutdown();
 
   TransientShutdown();
   Debug("Shutdown", "Active");
-  setupSleepWakeup();
   StartDeepSleep(10 * 1e6);
 }
 

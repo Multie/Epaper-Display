@@ -32,28 +32,6 @@ typedef struct SettingsBattery
 } SettingsBattery;
 #pragma endregion
 
-#pragma region Buttons
-typedef struct SettingsButtons
-{
-
-} SettingsButtons;
-#pragma endregion
-
-#pragma region Gesture
-typedef struct SettingsGesture
-{
-
-} SettingsGesture;
-#pragma endregion
-
-#pragma region Slider
-typedef struct SettingsSlider
-{
-    int Min;
-    int Max;
-} SettingsSlider;
-#pragma endregion
-
 #pragma region Wifi
 typedef struct SettingsWifi
 {
@@ -73,9 +51,6 @@ typedef struct SettingsTime
 typedef struct __attribute__((packed)) SettingsStruct
 {
     SettingsBattery Battery;
-    SettingsButtons Buttons;
-    SettingsGesture Gesture;
-    SettingsSlider Slider;
     SettingsTime Time;
     SettingsWifi Wifi;
     uint64_t Checksum;

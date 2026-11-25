@@ -27,52 +27,6 @@ typedef struct StateBattery
 } StateBattery;
 #pragma endregion
 
-#pragma region Buttons
-typedef struct StateButtons
-{
-    bool Button1;
-    bool Button2;
-    bool Button3;
-    bool Button4;
-    bool Button5;
-    bool Button6;
-    bool Button7;
-} StateButtons;
-#pragma endregion
-
-#pragma region Gesture
-typedef struct StateGesture
-{
-    bool Up;
-    bool Down;
-    bool Left;
-    bool Right;
-} StateGesture;
-#pragma endregion
-
-#pragma region Slider
-typedef struct StateSlider
-{
-    double Position;
-    double OldPosition;
-    int Raw;
-} StateSlider;
-#pragma endregion
-
-#pragma region Beeper
-enum BeeperSongs
-{
-    None = 0,
-    Accept,
-    NotAccept,
-};
-typedef struct StateBeeper {
-    bool Play;
-    enum BeeperSongs Song;
-    
-} StateBeeper;
-#pragma endregion
-
 #pragma region Wifi
 typedef struct StateWifi {
     bool Connected;
@@ -107,10 +61,6 @@ typedef struct StateDisplay {
 typedef struct StateData
 {
     StateBattery Battery;
-    StateButtons Buttons;
-    StateGesture Gesture;
-    StateSlider Slider;
-    StateBeeper Beeper;
     StatePower Power;
     StateWifi Wifi;
     StateDisplay Display;

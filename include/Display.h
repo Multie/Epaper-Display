@@ -37,6 +37,16 @@ unsigned char DisplayImageRed[(EPD_WIDTH * EPD_HEIGHT / 8)] = {};
 Paint DisplayPaintBlack(DisplayImageBlack, epd.width, epd.height);
 Paint DisplayPaintRed(DisplayImageRed, epd.width, epd.height);
 
+// Panel sitzt um 180 Grad gedreht im Gehaeuse
+struct DisplayRotationInit
+{
+    DisplayRotationInit()
+    {
+        DisplayPaintBlack.SetRotate(ROTATE_180);
+        DisplayPaintRed.SetRotate(ROTATE_180);
+    }
+} DisplayRotationInitInstance;
+
 enum DisplayColor
 {
     White,
@@ -200,15 +210,8 @@ void DisplayUpdate()
 {
     // PaintTest();
     // Debug("Update", "Display");
-    if (State.Buttons.Button1)
-    {
-        State.Buttons.Button1 = false;
-        DisplayPaintBlack.Clear(UNCOLORED);
-        DisplayPaintRed.Clear(UNCOLORED);
-        DisplayDraw();
-    }
 #ifdef TestWebServer
-    else if (DisplayServerGodData && postDataSize > 0)
+    if (DisplayServerGodData && postDataSize > 0)
     {
         DisplayServerGodData = false;
         DisplayPaintBlack.Clear(UNCOLORED);
