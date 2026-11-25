@@ -51,7 +51,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             return await _handle_status_post(hass, entry, request)
         return await _handle_render_get(hass, entry)
 
-    webhook.async_register(hass, DOMAIN, entry.title, webhook_id, handle_webhook)
+    # HA-Webhooks erlauben per Default nur POST/PUT - GET fuer den Render-Abruf
+    # muss explizit freigegeben werden, sonst antwortet HA mit 405.
+    webhook.async_register(
+        hass,
+        DOMAIN,
+        entry.title,
+        webhook_id,
+        handle_webhook,
+        allowed_methods=["GET", "POST"],
+    )
     entry.async_on_unload(lambda: webhook.async_unregister(hass, webhook_id))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

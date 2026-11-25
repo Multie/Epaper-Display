@@ -33,6 +33,8 @@ bool connectWifi()
     {
         DebugProgressStart("Wifi Connect " + String(Settings.Wifi.Ssid));
         WiFi.mode(WIFI_STA);
+        // Reduce TX power to limit the current spike at radio start (brownout fix)
+        WiFi.setTxPower(WIFI_POWER_8_5dBm);
         String ssid = String(Settings.Wifi.Ssid);
         String password = String(Settings.Wifi.Password);
 

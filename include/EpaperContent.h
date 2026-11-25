@@ -29,7 +29,9 @@
 // URL des Webhooks aus der HA-Integration "Epaper Display" (Einstellungen ->
 // Geraete & Dienste -> Epaper Display -> ... -> Webhook-URL). Dieselbe URL
 // wird per POST (Status melden) und GET (Inhalt abholen) angesprochen.
-#define EpaperWebhookUrl "https://home.color-home.de/api/webhook/CHANGE_ME"
+// Steht in include/Secrets.h (nicht im Repo), siehe Secrets.h.example -
+// die webhook_id ist der einzige Zugriffsschutz des Webhooks.
+#include "Secrets.h"
 
 // Max. erwartete Antwortgroesse des GET - gegen einen kaputten/boesartigen
 // Server, der sonst unbegrenzt Heap fuer die DSL-Antwort belegen wuerde.
