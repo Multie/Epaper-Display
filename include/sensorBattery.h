@@ -33,7 +33,7 @@ LC709203F sensorBattery;
 void SensorBatteryReadState()
 {
     State.Battery.Alarm = digitalRead(BatteryLowAlarmPin);
-    State.Battery.Percent = sensorBattery.cellStateOfCharge() / 100.0;
+    State.Battery.Percent = sensorBattery.cellStateOfCharge(); // Library liefert bereits 0-100
     State.Battery.Voltage = sensorBattery.cellVoltage_mV() / 1000.0;
 }
 
