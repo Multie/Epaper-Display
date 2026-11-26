@@ -8,8 +8,5 @@
 
 node_modules
 
-# Echte WLAN-Zugangsdaten - nie ins Repo, siehe include/Secrets.h.example
-include/Secrets.h
-
 __pycache__/
 *.pyc

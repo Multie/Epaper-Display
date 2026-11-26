@@ -24,14 +24,8 @@
 #include <ArduinoJson.h>
 #include "Debug.h"
 #include "Display.h"
+#include "Settings.h"
 #include "OtaUpdate.h"
-
-// URL des Webhooks aus der HA-Integration "Epaper Display" (Einstellungen ->
-// Geraete & Dienste -> Epaper Display -> ... -> Webhook-URL). Dieselbe URL
-// wird per POST (Status melden) und GET (Inhalt abholen) angesprochen.
-// Steht in include/Secrets.h (nicht im Repo), siehe Secrets.h.example -
-// die webhook_id ist der einzige Zugriffsschutz des Webhooks.
-#include "Secrets.h"
 
 // Max. erwartete Antwortgroesse des GET - gegen einen kaputten/boesartigen
 // Server, der sonst unbegrenzt Heap fuer die DSL-Antwort belegen wuerde.
@@ -40,7 +34,7 @@
 void EpaperReportStatus(float batteryPercent, float batteryVoltage)
 {
     HTTPClient http;
-    http.begin(EpaperWebhookUrl);
+    http.begin(Settings.Url);
     http.addHeader("Content-Type", "application/json");
 
     JsonDocument status;
@@ -62,7 +56,7 @@ void EpaperReportStatus(float batteryPercent, float batteryVoltage)
 void EpaperFetchAndDrawContent()
 {
     HTTPClient http;
-    http.begin(EpaperWebhookUrl);
+    http.begin(Settings.Url);
     int code = http.GET();
     if (code != HTTP_CODE_OK)
     {
@@ -91,7 +85,7 @@ void EpaperFetchAndDrawContent()
 
 void EpaperContentUpdate(float batteryPercent, float batteryVoltage)
 {
-    if (WiFi.status() != WL_CONNECTED)
+    if (WiFi.status() != WL_CONNECTED || strlen(Settings.Url) == 0)
     {
         return;
     }

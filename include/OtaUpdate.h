@@ -24,15 +24,18 @@
 #include <Update.h>
 #include <ArduinoJson.h>
 #include "Debug.h"
+#include "Settings.h"
 
-// Bei jedem Firmware-Release von Hand erhoehen
-#define FirmwareVersionCode 1
+// Bei jedem Firmware-Release vom release.sh-Skript automatisch erhoeht
+#define FirmwareVersionCode 3
 
-// Gleiches Manifest-Schema wie ColorApp (versionCode/versionName/apkUrl/notes),
-// hier zusaetzlich Pflichtfeld "md5" (32 Hex-Zeichen) zur Integritaetspruefung
-// der .bin VOR dem Flashen - ohne das wuerde jeder, der den Netzwerkpfad
-// kontrolliert, beliebigen Code aufs Geraet bringen koennen.
-#define OtaManifestUrl "https://home.your-tailnet.ts.net/epaper-display/version.json"
+// Manifest wird vom selben HA-Webhook geliefert wie der Display-Inhalt, nur
+// mit Query-Param - die URL kommt aus dem NVS (Settings.Url, per serieller
+// Shell gesetzt), nicht mehr aus einem Compile-Time-Secret.
+// Manifest-Schema: {"versionCode": N, "binUrl": "...", "md5": "<32 hex>"}.
+// "md5" ist Pflicht zur Integritaetspruefung der .bin VOR dem Flashen - ohne
+// das wuerde jeder, der den Netzwerkpfad kontrolliert, beliebigen Code aufs
+// Geraet bringen koennen.
 
 // Unter dieser Akku-Prozentzahl wird kein OTA-Flash versucht - ein Brownout
 // waehrend des Schreibens auf dieses batteriebetriebene Geraet kann es sonst
@@ -57,7 +60,7 @@ bool OtaIsValidMd5(const String &value)
 
 void OtaCheckAndUpdate(float batteryPercent)
 {
-    if (WiFi.status() != WL_CONNECTED)
+    if (WiFi.status() != WL_CONNECTED || strlen(Settings.Url) == 0)
     {
         return;
     }
@@ -67,8 +70,10 @@ void OtaCheckAndUpdate(float batteryPercent)
         return;
     }
 
+    String manifestUrl = String(Settings.Url) + "?firmware=version";
+
     HTTPClient manifestHttp;
-    manifestHttp.begin(OtaManifestUrl);
+    manifestHttp.begin(manifestUrl);
     int manifestCode = manifestHttp.GET();
     if (manifestCode != HTTP_CODE_OK)
     {

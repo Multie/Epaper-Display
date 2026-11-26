@@ -29,6 +29,7 @@ AsyncWebServer server(80);
 #include "Sleep.h"
 #include "OtaUpdate.h"
 #include "EpaperContent.h"
+#include "SerialShell.h"
 
 #include "sensorBattery.h"
 
@@ -79,6 +80,7 @@ void wakeup()
 #ifdef TestWebServer
   connectWifi();
 
+  OtaCheckAndUpdate(State.Battery.Percent);
   EpaperContentUpdate(State.Battery.Percent, State.Battery.Voltage);
 
   server.begin();
@@ -120,15 +122,18 @@ void setup()
 {
   setupPins();
   Serial.begin(112500);
-  setSettings();
   esp_sleep_wakeup_cause_t wakeup_reason;
   wakeup_reason = esp_sleep_get_wakeup_cause();
   if (wakeup_reason == ESP_SLEEP_WAKEUP_UNDEFINED)
   {
+    // Setup-Shell nur bei USB-Kaltstart erreichbar, nie nach Deep-Sleep-Wakeup.
+    bool hasSettings = loadSettingsOrDefaults();
+    SerialShellOfferAtBoot(hasSettings);
     startup();
   }
   else
   {
+    loadSettingsOrDefaults();
     wakeup();
   }
   loopDebug();

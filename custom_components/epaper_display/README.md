@@ -5,19 +5,20 @@ Assistant. Keine YAML-Konfiguration - Setup läuft über die UI.
 
 ## Installation via HACS
 
-Liegt im selben (privaten) Repo wie die Firmware, Pfad `custom_components/
+Liegt im selben (öffentlichen) Repo wie die Firmware, Pfad `custom_components/
 epaper_display/` + `hacs.json` am Repo-Root - HACS kann das direkt installieren:
 
-1. HACS -> drei Punkte oben rechts -> "Benutzerdefinierte Repositories"
-2. URL `https://github.com/Multie/Epaper-Display` eintragen, Kategorie "Integration"
-3. Da das Repo privat ist: einmalig unter HACS -> Einstellungen einen GitHub
-   Personal Access Token mit `repo`-Scope hinterlegen (HACS fragt danach,
-   falls noch keiner konfiguriert ist)
-4. Epaper Display in HACS installieren -> Home Assistant neu starten
+1. HACS/Marketplace -> "Über einen GitHub-Link hinzufügen"
+2. URL `https://github.com/Multie/Epaper-Display` eintragen
+3. Epaper Display installieren -> Home Assistant neu starten
 
 Alternative ohne HACS: den Ordner `custom_components/epaper_display`
 manuell nach `/mnt/data/home-assistant/config/custom_components/` kopieren
 und HA neu starten.
+
+Jedes Firmware-Release (siehe `release.sh` im Repo-Root) erhöht auch die
+Integrationsversion - ein Firmware-Update für das ESP32 kommt also als
+normales HACS-Integrations-Update an.
 
 ## Einrichtung
 
@@ -28,8 +29,10 @@ und HA neu starten.
    `webhook_id` einmalig aus den Logs beim Setup holen (`grep webhook_id` im
    HA-Log direkt nach dem Anlegen) oder per Entwicklerwerkzeuge -> Zustände
    die Config-Entry-Daten einsehen.
-4. Diese vollständige URL in der Firmware eintragen:
-   `Epaper-Display/include/EpaperContent.h` -> `EpaperWebhookUrl`
+4. Diese vollständige URL **nicht** in eine Datei im Repo eintragen - sie wird
+   per USB über die serielle Setup-Shell der Firmware ins NVS geschrieben
+   (siehe Repo-Root, Abschnitt "Setup-Shell"). Es gibt keine Secrets-Datei
+   mehr im Projekt.
 
 ## Was die Integration macht
 
@@ -40,6 +43,9 @@ und HA neu starten.
   Anzahl offener Einkaufslisten-Items, Akkustand, Zeitpunkt des letzten
   Refreshs) als Text im Protokoll, das `DisplayParseText` in der Firmware
   versteht (siehe `include/Display/DisplayDrawModules.h`)
+- **GET** `/api/webhook/<id>?firmware=version`: liefert `version.json`
+  (`versionCode`, `md5`) aus `firmware/` plus die passende `binUrl`
+- **GET** `/api/webhook/<id>?firmware=bin`: liefert `firmware/firmware.bin`
 
 Kein Access-Token nötig (Webhooks sind in HA bewusst offen) - die
 `webhook_id` selbst (lang, zufällig) ist der Zugriffsschutz.

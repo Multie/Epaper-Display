@@ -10,8 +10,10 @@ ist der Zugriffsschutz (lang, zufaellig, siehe config_flow.py).
 """
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from aiohttp import web
@@ -33,6 +35,11 @@ from .render import render_dsl
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = ["sensor"]
 
+# Vom release.sh-Skript befuellt, nicht von Hand editieren.
+FIRMWARE_DIR = Path(__file__).parent / "firmware"
+FIRMWARE_VERSION_FILE = FIRMWARE_DIR / "version.json"
+FIRMWARE_BIN_FILE = FIRMWARE_DIR / "firmware.bin"
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
@@ -49,6 +56,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def handle_webhook(hass: HomeAssistant, webhook_id: str, request: web.Request) -> web.Response:
         if request.method == "POST":
             return await _handle_status_post(hass, entry, request)
+        firmware_request = request.query.get("firmware")
+        if firmware_request == "version":
+            return await _handle_firmware_version(hass, request)
+        if firmware_request == "bin":
+            return await _handle_firmware_bin(hass)
         return await _handle_render_get(hass, entry)
 
     # HA-Webhooks erlauben per Default nur POST/PUT - GET fuer den Render-Abruf
@@ -119,6 +131,25 @@ async def _handle_render_get(hass: HomeAssistant, entry: ConfigEntry) -> web.Res
     # Firmware vergleicht Bytes 1:1 (chr(187)/chr(166)) - muss also tatsaechlich
     # Latin-1-codiert als einzelne Bytes rausgehen, nicht UTF-8-Mehrbyte.
     return web.Response(body=dsl.encode("latin-1"), content_type="text/plain", charset="ISO-8859-1")
+
+
+async def _handle_firmware_version(hass: HomeAssistant, request: web.Request) -> web.Response:
+    if not FIRMWARE_VERSION_FILE.exists():
+        return web.Response(status=404, text="no firmware published")
+
+    manifest = await hass.async_add_executor_job(
+        lambda: json.loads(FIRMWARE_VERSION_FILE.read_text(encoding="utf-8"))
+    )
+    manifest["binUrl"] = str(request.url.update_query({"firmware": "bin"}))
+    return web.json_response(manifest)
+
+
+async def _handle_firmware_bin(hass: HomeAssistant) -> web.Response:
+    if not FIRMWARE_BIN_FILE.exists():
+        return web.Response(status=404, text="no firmware published")
+
+    data = await hass.async_add_executor_job(FIRMWARE_BIN_FILE.read_bytes)
+    return web.Response(body=data, content_type="application/octet-stream")
 
 
 async def _fetch_weather(hass: HomeAssistant, entity_id: str):
