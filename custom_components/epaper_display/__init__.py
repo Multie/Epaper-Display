@@ -21,6 +21,7 @@ from homeassistant.components import webhook
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -47,6 +48,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "battery_percent": None,
         "battery_voltage": None,
         "firmware_version": None,
+        "power_state": None,
+        "ota_state": None,
         "last_seen": None,
         "last_refresh": None,
     }
@@ -75,6 +78,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     entry.async_on_unload(lambda: webhook.async_unregister(hass, webhook_id))
 
+    # Fuer die serielle Setup-Shell der Firmware ("url <wert>")
+    try:
+        webhook_url = webhook.async_generate_url(hass, webhook_id)
+    except NoURLAvailableError:
+        # Keine HA-URL konfiguriert: nur den Pfad zeigen
+        webhook_url = webhook.async_generate_path(webhook_id)
+    hass.data[DOMAIN][entry.entry_id]["webhook_url"] = webhook_url
+    # warning, damit die Zeile beim Standard-Loglevel sichtbar ist
+    _LOGGER.warning("Webhook-URL fuer %s: %s", entry.title, webhook_url)
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
@@ -96,6 +109,8 @@ async def _handle_status_post(hass: HomeAssistant, entry: ConfigEntry, request: 
     store["battery_percent"] = _safe_float(body.get("batteryPercent"))
     store["battery_voltage"] = _safe_float(body.get("batteryVoltage"))
     store["firmware_version"] = body.get("firmwareVersion")
+    store["power_state"] = body.get("powerState")
+    store["ota_state"] = body.get("otaState")
     store["last_seen"] = dt_util.utcnow()
 
     async_dispatcher_send(hass, f"{SIGNAL_STATUS_UPDATED}_{entry.entry_id}")

@@ -24,11 +24,11 @@ normales HACS-Integrations-Update an.
 
 1. Einstellungen -> Geräte & Dienste -> Integration hinzufügen -> "Epaper Display"
 2. Wetter-Entity, Kalender(e) und Einkaufslisten-Todo-Entity auswählen
-3. Nach dem Anlegen: Gerät öffnen -> die Webhook-URL steht nicht direkt in der
-   UI, sondern ergibt sich aus `<HA-Basis-URL>/api/webhook/<webhook_id>` - die
-   `webhook_id` einmalig aus den Logs beim Setup holen (`grep webhook_id` im
-   HA-Log direkt nach dem Anlegen) oder per Entwicklerwerkzeuge -> Zustände
-   die Config-Entry-Daten einsehen.
+3. Webhook-URL ablesen: Gerät öffnen -> Diagnose -> Sensor "Webhook-URL".
+   Sie steht außerdem bei jedem Start der Integration im HA-Log
+   (nach `Webhook-URL` suchen). Ist in HA keine URL konfiguriert, erscheint
+   nur der Pfad - dann `<HA-Basis-URL>` davorsetzen. Die URL ist wie ein
+   Passwort zu behandeln: Sensor und Log sind für HA-Nutzer lesbar.
 4. Diese vollständige URL **nicht** in eine Datei im Repo eintragen - sie wird
    per USB über die serielle Setup-Shell der Firmware ins NVS geschrieben
    (siehe Repo-Root, Abschnitt "Setup-Shell"). Es gibt keine Secrets-Datei
@@ -37,7 +37,7 @@ normales HACS-Integrations-Update an.
 ## Was die Integration macht
 
 - **POST** `/api/webhook/<id>`: ESP32 meldet `{batteryPercent, batteryVoltage,
-  firmwareVersion}` - landet als Sensoren (`sensor.epaper_display_akku`, ...)
+  firmwareVersion, powerState, otaState}` - landet als Sensoren (`sensor.epaper_display_akku`, ...)
 - **GET** `/api/webhook/<id>`: liefert die aktuelle Display-Zeichenbeschreibung
   (Wetter jetzt/+1h/+2h/heute, Termine heute aus den gewählten Kalendern,
   Anzahl offener Einkaufslisten-Items, Akkustand, Zeitpunkt des letzten

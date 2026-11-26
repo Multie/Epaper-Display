@@ -20,6 +20,7 @@ AsyncWebServer server(80);
 #include "Debug.h"
 
 #include "Pins.h"
+#include "PowerSource.h"
 #include "Transient.h"
 #include "Settings.h"
 
@@ -36,8 +37,12 @@ AsyncWebServer server(80);
 // Wie lange nach dem Aufwachen der lokale Webserver (/api/display/image, fuer
 // manuelles Debugging) erreichbar bleibt, bevor wieder in den Deep Sleep geht.
 #define EpaperActiveWindowSeconds 10
-// Zykluszeit zwischen zwei Display-Refreshes/HA-Abfragen.
+// Zykluszeit zwischen zwei Display-Refreshes/Update-Checks, auf Akku zugleich
+// das Aufwach-Intervall.
 #define EpaperWakeIntervalSeconds (10 * 60)
+// Am Strom: Status (Akkuspannung usw.) einmal pro Minute melden
+#define EpaperPoweredIntervalSeconds 60
+#define EpaperMinSleepSeconds 10
 
 // Unter dieser Akku-Prozentzahl nur noch schlafen: kein WLAN, kein Display,
 // kein OTA-Check - das waere ohnehin alles stromintensiv und bringt dem Nutzer
@@ -48,39 +53,58 @@ AsyncWebServer server(80);
 
 int activeSeconds = 0;
 bool batteryEmpty = false;
+// Zeit seit dem letzten Display-Refresh, ueberlebt Deep Sleep
+RTC_DATA_ATTR uint32_t secondsSinceContent = 0;
 
 void shutdown();
+
+// Netzwerk-Teil eines Wachzyklus
+void networkCycle(bool contentDue)
+{
+#ifdef TestWebServer
+  connectWifi();
+
+  // Leerer Akku (nur beim Laden moeglich): nur Status melden
+  if (contentDue && !batteryEmpty)
+  {
+    secondsSinceContent = 0;
+    OtaCheckAndUpdate(State.Battery.Percent, State.Battery.Voltage);
+    EpaperContentUpdate(State.Battery.Percent, State.Battery.Voltage);
+  }
+  else if (WiFi.status() == WL_CONNECTED && strlen(Settings.Url) > 0)
+  {
+    EpaperReportStatus(State.Battery.Percent, State.Battery.Voltage);
+  }
+
+  server.begin();
+#endif
+}
 
 void startup()
 {
   // Reboot
   delay(10000);
   Debug("Start", "Boot");
-  TimeSyncStartup();
   TransientStartup();
 
   PowerStartup();
   SensorBatteryStartup();
   SensorBatteryReadState();
+  // Muss vor TimeSyncStartup() (WLAN) stehen
+  PowerStateUpdate(State.Battery.Voltage, State.Battery.Percent);
 
   batteryEmpty = State.Battery.Percent < EpaperBatteryEmptyPercent;
-  if (batteryEmpty)
+  if (batteryEmpty && !PowerIsExternal())
   {
     Debug("Battery", "EmptySkipStartup");
     shutdown();
     return;
   }
 
+  TimeSyncStartup();
   DisplayStartup();
 
-#ifdef TestWebServer
-  connectWifi();
-
-  OtaCheckAndUpdate(State.Battery.Percent);
-  EpaperContentUpdate(State.Battery.Percent, State.Battery.Voltage);
-
-  server.begin();
-#endif
+  networkCycle(true);
 }
 
 void wakeup()
@@ -92,9 +116,10 @@ void wakeup()
   PowerWakeup();
   SensorBatteryWakeup();
   SensorBatteryReadState();
+  PowerStateUpdate(State.Battery.Voltage, State.Battery.Percent);
 
   batteryEmpty = State.Battery.Percent < EpaperBatteryEmptyPercent;
-  if (batteryEmpty)
+  if (batteryEmpty && !PowerIsExternal())
   {
     Debug("Battery", "EmptySkipWakeup");
     shutdown();
@@ -103,14 +128,7 @@ void wakeup()
 
   DisplayWakeup();
 
-#ifdef TestWebServer
-  connectWifi();
-
-  OtaCheckAndUpdate(State.Battery.Percent);
-  EpaperContentUpdate(State.Battery.Percent, State.Battery.Voltage);
-
-  server.begin();
-#endif
+  networkCycle(secondsSinceContent >= EpaperWakeIntervalSeconds);
 }
 
 void update()
@@ -143,7 +161,21 @@ void shutdown()
 
   TransientShutdown();
   Debug("Shutdown", "Active");
-  uint64_t sleepSeconds = batteryEmpty ? EpaperBatteryEmptySleepSeconds : EpaperWakeIntervalSeconds;
+  uint32_t awakeSeconds = millis() / 1000;
+  uint64_t sleepSeconds;
+  if (PowerIsExternal() || PowerNeedsSecondReading())
+  {
+    // Wachzeit abziehen, damit etwa einmal pro Minute gemeldet wird
+    sleepSeconds = awakeSeconds + EpaperMinSleepSeconds < EpaperPoweredIntervalSeconds
+                       ? EpaperPoweredIntervalSeconds - awakeSeconds
+                       : EpaperMinSleepSeconds;
+  }
+  else
+  {
+    sleepSeconds = batteryEmpty ? EpaperBatteryEmptySleepSeconds : EpaperWakeIntervalSeconds;
+  }
+  secondsSinceContent += awakeSeconds + sleepSeconds;
+  Debug("Power", String(PowerStateName()) + " " + String(State.Battery.Voltage, 3) + "V Sleep " + String((uint32_t)sleepSeconds));
   StartDeepSleep(sleepSeconds * 1000000ull);
 }
 

@@ -26,6 +26,7 @@
 #include "Display.h"
 #include "Settings.h"
 #include "OtaUpdate.h"
+#include "PowerSource.h"
 
 // Max. erwartete Antwortgroesse des GET - gegen einen kaputten/boesartigen
 // Server, der sonst unbegrenzt Heap fuer die DSL-Antwort belegen wuerde.
@@ -41,6 +42,8 @@ void EpaperReportStatus(float batteryPercent, float batteryVoltage)
     status["batteryPercent"] = batteryPercent;
     status["batteryVoltage"] = batteryVoltage;
     status["firmwareVersion"] = FirmwareVersionCode;
+    status["powerState"] = PowerStateName();
+    status["otaState"] = OtaState;
 
     String body;
     serializeJson(status, body);

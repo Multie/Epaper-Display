@@ -55,6 +55,54 @@ wieder in den Deep Sleep - mit einem auf 1 Stunde verlängerten Zyklus
 Restladung zu strecken. Sobald der Akku wieder über der Schwelle liegt,
 läuft der normale Betrieb automatisch weiter.
 
+## Zustaende und Intervalle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Unbekannt
+    Unbekannt --> Laden: Spannung steigt
+    Unbekannt --> Entladen: Spannung faellt
+    Unbekannt --> Voll: ab 99 % und 4,15 V
+    Entladen --> Laden: Spannung steigt
+    Laden --> Voll: ab 99 % und 4,15 V
+    Voll --> Entladen: Spannung faellt
+    Laden --> Entladen: Spannung faellt
+    Entladen --> AkkuLeer: unter 5 %
+    AkkuLeer --> Laden: Spannung steigt
+```
+
+| Zustand (`powerState`) | Bedingung | Statusmeldung | Display + Update-Check |
+|---|---|---|---|
+| `charging` | Spannung steigt | ca. jede Minute | alle 10 min (nicht unter 5 %) |
+| `full` | ab 99 % und 4,15 V, nicht fallend | ca. jede Minute | alle 10 min |
+| `discharging` | Spannung faellt | alle 10 min | alle 10 min |
+| `unknown` | seit Neustart keine klare Aenderung | einmal nach 1 min, dann alle 10 min | alle 10 min |
+| Akku leer | unter 5 %, nicht ladend | keine, Aufwachen stuendlich | keine |
+
+Der Zustand wird allein aus der Akkuspannung abgeleitet (`include/PowerSource.h`):
+Steigt sie um mindestens 30 mV ueber die Referenz, gilt `charging`, faellt sie
+um 30 mV darunter, `discharging`. Dazwischen bleibt der Zustand. Gemessen wird
+einmal pro Wachzyklus vor dem WLAN-Start. An- und Abstecken wird erst beim
+naechsten Aufwachen bemerkt; Temperatur oder Last koennen das Ergebnis
+verfaelschen.
+
+Update-Status (`otaState`):
+
+```mermaid
+stateDiagram-v2
+    [*] --> unknown
+    unknown --> up_to_date: keine neue Version
+    unknown --> skipped_low_battery: Akku unter 30 %
+    unknown --> check_failed: Manifest nicht lesbar
+    unknown --> rejected_md5: keine gueltige Pruefsumme
+    unknown --> updating: neue Version
+    updating --> installed_rebooting: Pruefsumme ok
+    updating --> download_failed
+    updating --> install_failed
+    updating --> verify_failed
+    installed_rebooting --> unknown: Neustart
+```
+
 ## Build
 
 ```

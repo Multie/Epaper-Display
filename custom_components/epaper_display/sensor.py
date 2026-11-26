@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, UnitOfElectricPotential
+from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfElectricPotential
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import DeviceInfo
@@ -26,6 +26,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
                 entry, "battery_voltage", "Akkuspannung", UnitOfElectricPotential.VOLT, SensorDeviceClass.VOLTAGE, device_info
             ),
             EpaperDisplaySensor(entry, "firmware_version", "Firmware-Version", None, None, device_info),
+            EpaperDisplaySensor(entry, "power_state", "Ladezustand", None, None, device_info),
+            EpaperDisplaySensor(entry, "ota_state", "Update-Status", None, None, device_info),
+            EpaperDisplaySensor(
+                entry, "webhook_url", "Webhook-URL", None, None, device_info, EntityCategory.DIAGNOSTIC
+            ),
             EpaperDisplaySensor(entry, "last_seen", "Zuletzt gemeldet", None, SensorDeviceClass.TIMESTAMP, device_info),
             EpaperDisplaySensor(entry, "last_refresh", "Letztes Display-Update", None, SensorDeviceClass.TIMESTAMP, device_info),
         ]
@@ -46,6 +51,7 @@ class EpaperDisplaySensor(SensorEntity):
         unit: str | None,
         device_class: SensorDeviceClass | None,
         device_info: DeviceInfo,
+        entity_category: EntityCategory | None = None,
     ) -> None:
         self._entry = entry
         self._store_key = store_key
@@ -54,6 +60,7 @@ class EpaperDisplaySensor(SensorEntity):
         self._attr_device_class = device_class
         self._attr_unique_id = f"{entry.entry_id}_{store_key}"
         self._attr_device_info = device_info
+        self._attr_entity_category = entity_category
 
     @property
     def native_value(self):

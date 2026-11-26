@@ -42,6 +42,18 @@
 // ohne USB-Reflash-Moeglichkeit bricken.
 #define OtaMinBatteryPercent 30.0
 
+// Letztes Ergebnis des Update-Checks, ueberlebt Deep Sleep, wird an HA gemeldet
+RTC_DATA_ATTR char OtaState[24] = "unknown";
+
+// Definiert in EpaperContent.h
+void EpaperReportStatus(float batteryPercent, float batteryVoltage);
+
+void OtaSetState(const char *state)
+{
+    strlcpy(OtaState, state, sizeof(OtaState));
+    Debug("Ota", state);
+}
+
 bool OtaIsValidMd5(const String &value)
 {
     if (value.length() != 32)
@@ -58,7 +70,7 @@ bool OtaIsValidMd5(const String &value)
     return true;
 }
 
-void OtaCheckAndUpdate(float batteryPercent)
+void OtaCheckAndUpdate(float batteryPercent, float batteryVoltage)
 {
     if (WiFi.status() != WL_CONNECTED || strlen(Settings.Url) == 0)
     {
@@ -66,7 +78,7 @@ void OtaCheckAndUpdate(float batteryPercent)
     }
     if (batteryPercent < OtaMinBatteryPercent)
     {
-        Debug("Ota", "SkippedLowBattery");
+        OtaSetState("skipped_low_battery");
         return;
     }
 
@@ -77,7 +89,7 @@ void OtaCheckAndUpdate(float batteryPercent)
     int manifestCode = manifestHttp.GET();
     if (manifestCode != HTTP_CODE_OK)
     {
-        Debug("Ota", "ManifestRequestFailed");
+        OtaSetState("check_failed");
         manifestHttp.end();
         return;
     }
@@ -87,7 +99,7 @@ void OtaCheckAndUpdate(float batteryPercent)
     manifestHttp.end();
     if (parseError)
     {
-        Debug("Ota", "ManifestParseFailed");
+        OtaSetState("check_failed");
         return;
     }
 
@@ -98,17 +110,18 @@ void OtaCheckAndUpdate(float batteryPercent)
 
     if (remoteVersionCode <= FirmwareVersionCode || binUrl.length() == 0)
     {
-        Debug("Ota", "UpToDate");
+        OtaSetState("up_to_date");
         return;
     }
     if (!OtaIsValidMd5(expectedMd5))
     {
         // Kein/ungueltiger Hash im Manifest -> lieber kein Flash als ein unverifiziertes Image
-        Debug("Ota", "RejectedMissingMd5");
+        OtaSetState("rejected_md5");
         return;
     }
 
-    Debug("Ota", "UpdateAvailable");
+    OtaSetState("updating");
+    EpaperReportStatus(batteryPercent, batteryVoltage);
 
     HTTPClient binHttp;
     binHttp.begin(binUrl);
@@ -116,14 +129,14 @@ void OtaCheckAndUpdate(float batteryPercent)
     int contentLength = binHttp.getSize();
     if (binCode != HTTP_CODE_OK || contentLength <= 0)
     {
-        Debug("Ota", "BinRequestFailed");
+        OtaSetState("download_failed");
         binHttp.end();
         return;
     }
 
     if (!Update.begin(contentLength))
     {
-        Debug("Ota", "UpdateBeginFailed");
+        OtaSetState("install_failed");
         binHttp.end();
         return;
     }
@@ -135,7 +148,7 @@ void OtaCheckAndUpdate(float batteryPercent)
 
     if (written != (size_t)contentLength)
     {
-        Debug("Ota", "WriteIncomplete");
+        OtaSetState("download_failed");
         Update.abort();
         return;
     }
@@ -143,11 +156,13 @@ void OtaCheckAndUpdate(float batteryPercent)
     // end(true) prueft u.a. die zuvor gesetzte MD5 gegen das geschriebene Image
     if (!Update.end(true))
     {
-        Debug("Ota", "VerifyFailed:" + String(Update.getError()));
+        Debug("Ota", "VerifyError:" + String(Update.getError()));
+        OtaSetState("verify_failed");
         return;
     }
 
-    Debug("Ota", "UpdateOkRebooting");
+    OtaSetState("installed_rebooting");
+    EpaperReportStatus(batteryPercent, batteryVoltage);
     ESP.restart();
 }
 
