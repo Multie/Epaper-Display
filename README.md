@@ -46,6 +46,15 @@ ein normales HACS-Integrations-Update.
 Kein automatisches Rollback: schlägt ein Release fehl, hilft nur ein
 USB-Reflash.
 
+## Battery-Empty-Modus
+
+Unter 5 % Akku (`EpaperBatteryEmptyPercent` in `src/main.cpp`) überspringt
+das Gerät WLAN, Display-Update und OTA-Check komplett und geht sofort
+wieder in den Deep Sleep - mit einem auf 1 Stunde verlängerten Zyklus
+(`EpaperBatteryEmptySleepSeconds`) statt der üblichen 10 Minuten, um die
+Restladung zu strecken. Sobald der Akku wieder über der Schwelle liegt,
+läuft der normale Betrieb automatisch weiter.
+
 ## Build
 
 ```

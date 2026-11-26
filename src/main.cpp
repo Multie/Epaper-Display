@@ -39,7 +39,17 @@ AsyncWebServer server(80);
 // Zykluszeit zwischen zwei Display-Refreshes/HA-Abfragen.
 #define EpaperWakeIntervalSeconds (10 * 60)
 
+// Unter dieser Akku-Prozentzahl nur noch schlafen: kein WLAN, kein Display,
+// kein OTA-Check - das waere ohnehin alles stromintensiv und bringt dem Nutzer
+// nichts mehr, wenn der Akku gleich leer ist. Stattdessen seltener aufwachen,
+// um die Restladung zu strecken.
+#define EpaperBatteryEmptyPercent 5.0
+#define EpaperBatteryEmptySleepSeconds (60 * 60)
+
 int activeSeconds = 0;
+bool batteryEmpty = false;
+
+void shutdown();
 
 void startup()
 {
@@ -52,6 +62,14 @@ void startup()
   PowerStartup();
   SensorBatteryStartup();
   SensorBatteryReadState();
+
+  batteryEmpty = State.Battery.Percent < EpaperBatteryEmptyPercent;
+  if (batteryEmpty)
+  {
+    Debug("Battery", "EmptySkipStartup");
+    shutdown();
+    return;
+  }
 
   DisplayStartup();
 
@@ -74,6 +92,14 @@ void wakeup()
   PowerWakeup();
   SensorBatteryWakeup();
   SensorBatteryReadState();
+
+  batteryEmpty = State.Battery.Percent < EpaperBatteryEmptyPercent;
+  if (batteryEmpty)
+  {
+    Debug("Battery", "EmptySkipWakeup");
+    shutdown();
+    return;
+  }
 
   DisplayWakeup();
 
@@ -109,15 +135,18 @@ void shutdown()
   SensorBatteryShutdown();
 
   TimeSyncShutdown();
-  DisplayShutdown();
+  if (!batteryEmpty)
+  {
+    DisplayShutdown();
+  }
   PowerShutdown();
 
   TransientShutdown();
   Debug("Shutdown", "Active");
-  StartDeepSleep((uint64_t)EpaperWakeIntervalSeconds * 1000000ull);
+  uint64_t sleepSeconds = batteryEmpty ? EpaperBatteryEmptySleepSeconds : EpaperWakeIntervalSeconds;
+  StartDeepSleep(sleepSeconds * 1000000ull);
 }
 
-void shutdown();
 void setup()
 {
   setupPins();
