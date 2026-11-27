@@ -25,6 +25,8 @@
  */
 
 #include "epd4in2bV2.h"
+#include "driver/gpio.h"
+#include "esp_sleep.h"
 
 Epd::~Epd(){};
 
@@ -112,12 +114,21 @@ void Epd::WaitUntilIdle(void)
     unsigned long start = millis();
     while (DigitalRead(busy_pin) == 0)
     { // 0: busy, 1: idle
-        if (TimedOut || millis() - start > timeoutMs)
+        unsigned long elapsed = millis() - start;
+        if (TimedOut || elapsed >= timeoutMs)
         {
             TimedOut = true;
             return;
         }
-        DelayMs(20);
+        // Light Sleep bis Busy HIGH wird oder die Restzeit abgelaufen ist
+        Serial.flush();
+        gpio_wakeup_enable((gpio_num_t)busy_pin, GPIO_INTR_HIGH_LEVEL);
+        esp_sleep_enable_gpio_wakeup();
+        esp_sleep_enable_timer_wakeup((uint64_t)(timeoutMs - elapsed) * 1000ull);
+        esp_light_sleep_start();
+        gpio_wakeup_disable((gpio_num_t)busy_pin);
+        // Sonst blieben die Quellen auch fuer den spaeteren Deep Sleep aktiv
+        esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
     }
 }
 

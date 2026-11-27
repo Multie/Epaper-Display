@@ -152,12 +152,15 @@ void shutdown()
   secondsSinceContent += awakeSeconds + sleepSeconds;
   EpaperSecondsSinceDraw += awakeSeconds + sleepSeconds;
   Debug("Power", String(PowerStateName()) + " " + String(State.Battery.Voltage, 3) + "V Sleep " + String((uint32_t)sleepSeconds));
+  Serial.flush();
+  PowerHoldForSleep();
   StartDeepSleep(sleepSeconds * 1000000ull);
 }
 
 void setup()
 {
   setupPins();
+  PowerReleaseHold();
   Serial.begin(115200);
   esp_sleep_wakeup_cause_t wakeup_reason;
   wakeup_reason = esp_sleep_get_wakeup_cause();

@@ -111,6 +111,14 @@ oder spaetestens nach 24 Stunden. "Stand:" zeigt also die letzte Aenderung.
 Vor dem Refresh wird das WLAN abgeschaltet. Antwortet das Panel 60 s lang
 nicht, wird abgebrochen und `displayState` = `timeout` gemeldet.
 
+## Stromsparen
+
+Das Display wird ueber `PowerPin` (IO5, HIGH = an) nur waehrend eines Refreshs
+versorgt; im Deep Sleep werden Versorgung und Signalleitungen LOW gehalten.
+Waehrend das Panel arbeitet, liegt der ESP32 im Light Sleep und wacht ueber
+die Busy-Leitung wieder auf. Die RGB-LED des Boards ist ausgeloetet
+(IO17/IO18 gehoeren dem Display).
+
 ## Build
 
 ```

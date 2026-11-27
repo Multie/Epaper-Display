@@ -67,44 +67,44 @@ bool DisplayDraw()
         return true;
     }
 
-    int initResult;
-    if (State.Display.Sleep)
+    // Nach dem Einschalten ist immer eine volle Initialisierung noetig
+    PowerOn();
+    Debug("Display", "Init");
+    bool ok = epd.Init() == 0;
+    // SPI.begin() belegt IO19 als MISO und nimmt dem Akku-Alarm den Pullup
+    pinMode(BatteryLowAlarmPin, INPUT_PULLUP);
+    if (ok)
     {
-        Debug("Display", "Reset");
-        initResult = epd.Wakeup();
+        // Uebertraegt beide Puffer und loest genau einen Refresh aus
+        epd.DisplayFrame(DisplayPaintBlack.GetImage(), DisplayPaintRed.GetImage());
+        ok = !epd.TimedOut;
+        DisplayPaintBlack.resetChanged();
+        DisplayPaintRed.resetChanged();
+        Debug("Display", ok ? "Frame" : "Timeout");
+        // Panel geordnet herunterfahren, bevor der Strom weggeht
+        epd.Sleep();
     }
     else
     {
-        Debug("Display", "Init");
-        initResult = epd.Init();
-    }
-    if (initResult != 0)
-    {
-        DisplayTimeout = true;
         Debug("Display", "Timeout");
-        return false;
     }
-
-    // Uebertraegt beide Puffer und loest genau einen Refresh aus
-    epd.DisplayFrame(DisplayPaintBlack.GetImage(), DisplayPaintRed.GetImage());
-    DisplayTimeout = epd.TimedOut;
-    Debug("Display", DisplayTimeout ? "Timeout" : "Frame");
-    DisplayPaintBlack.resetChanged();
-    DisplayPaintRed.resetChanged();
-    epd.Sleep();
-    Debug("Display", "Sleep");
-    State.Display.Sleep = true;
-    return !DisplayTimeout;
+    // SPI von den Pins trennen, dann Display stromlos
+    SPI.endTransaction();
+    SPI.end();
+    PowerOff();
+    delay(20);
+    pinMode(DisplayBusyPin, INPUT_PULLDOWN);
+    Debug("Display", "Off Busy=" + String(digitalRead(DisplayBusyPin)));
+    DisplayTimeout = !ok;
+    return ok;
 }
 
 void DisplayStartup()
 {
-    State.Display.Sleep = false;
 }
 
 void DisplayWakeup()
 {
-    State.Display.Sleep = false;
 }
 
 void DisplayShutdown()
