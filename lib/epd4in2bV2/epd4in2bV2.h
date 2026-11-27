@@ -91,6 +91,8 @@ public:
     void SendCommand(unsigned char command);
     void SendData(unsigned char data);
     void WaitUntilIdle(void);
+    // true, wenn seit dem letzten Init()/Wakeup() ein Busy-Warten abgelaufen ist
+    bool TimedOut = false;
     void Reset(void);
     void SetPartialWindow(const unsigned char *buffer_black, const unsigned char *buffer_red, int x, int y, int w, int l);
     void SetPartialWindowBlack(const unsigned char *buffer_black, int x, int y, int w, int l);

@@ -103,6 +103,14 @@ stateDiagram-v2
     installed_rebooting --> unknown: Neustart
 ```
 
+## Display-Refresh
+
+Alle 10 Minuten wird der Inhalt abgeholt, gezeichnet wird nur, wenn er sich
+geaendert hat (Header `X-Epaper-Content`, ohne Uhrzeit), nach einem Neustart
+oder spaetestens nach 24 Stunden. "Stand:" zeigt also die letzte Aenderung.
+Vor dem Refresh wird das WLAN abgeschaltet. Antwortet das Panel 60 s lang
+nicht, wird abgebrochen und `displayState` = `timeout` gemeldet.
+
 ## Build
 
 ```

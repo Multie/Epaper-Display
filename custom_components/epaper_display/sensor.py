@@ -27,12 +27,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             ),
             EpaperDisplaySensor(entry, "firmware_version", "Firmware-Version", None, None, device_info),
             EpaperDisplaySensor(entry, "power_state", "Ladezustand", None, None, device_info),
+            EpaperDisplaySensor(entry, "display_state", "Display-Status", None, None, device_info),
             EpaperDisplaySensor(entry, "ota_state", "Update-Status", None, None, device_info),
             EpaperDisplaySensor(
                 entry, "webhook_url", "Webhook-URL", None, None, device_info, EntityCategory.DIAGNOSTIC
             ),
             EpaperDisplaySensor(entry, "last_seen", "Zuletzt gemeldet", None, SensorDeviceClass.TIMESTAMP, device_info),
-            EpaperDisplaySensor(entry, "last_refresh", "Letztes Display-Update", None, SensorDeviceClass.TIMESTAMP, device_info),
+            EpaperDisplaySensor(entry, "last_refresh", "Letzter Inhaltsabruf", None, SensorDeviceClass.TIMESTAMP, device_info),
         ]
     )
 

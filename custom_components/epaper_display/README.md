@@ -34,10 +34,18 @@ normales HACS-Integrations-Update an.
    (siehe Repo-Root, Abschnitt "Setup-Shell"). Es gibt keine Secrets-Datei
    mehr im Projekt.
 
+## Auswahl ändern
+
+Einstellungen -> Geräte & Dienste -> Epaper Display -> Menü (drei Punkte) ->
+"Neu konfigurieren": Wetter-Entity, Kalender und Einkaufsliste ändern. Die
+Webhook-URL bleibt gleich. Das Display zeigt die Änderung beim nächsten
+Inhaltsabruf (bis zu 10 Minuten, oder Reset-Taste).
+
 ## Was die Integration macht
 
 - **POST** `/api/webhook/<id>`: ESP32 meldet `{batteryPercent, batteryVoltage,
-  firmwareVersion, powerState, otaState}` - landet als Sensoren (`sensor.epaper_display_akku`, ...)
+  firmwareVersion, powerState, otaState,
+  displayState}` - landet als Sensoren (`sensor.epaper_display_akku`, ...)
 - **GET** `/api/webhook/<id>`: liefert die aktuelle Display-Zeichenbeschreibung
   (Wetter jetzt/+1h/+2h/heute, Termine heute aus den gewählten Kalendern,
   Anzahl offener Einkaufslisten-Items, Akkustand, Zeitpunkt des letzten

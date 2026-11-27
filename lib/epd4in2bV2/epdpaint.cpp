@@ -196,7 +196,7 @@ void Paint::DrawPixel(int x, int y, PaintColor colored)
             return;
         }
         point_temp = x;
-        x = this->width - y;
+        x = this->width - 1 - y;
         y = point_temp;
         this->Changed = true;
         DrawAbsolutePixel(x, y, colored);
@@ -207,8 +207,8 @@ void Paint::DrawPixel(int x, int y, PaintColor colored)
         {
             return;
         }
-        x = this->width - x;
-        y = this->height - y;
+        x = this->width - 1 - x;
+        y = this->height - 1 - y;
         this->Changed = true;
         DrawAbsolutePixel(x, y, colored);
     }
@@ -220,7 +220,7 @@ void Paint::DrawPixel(int x, int y, PaintColor colored)
         }
         point_temp = x;
         x = y;
-        y = this->height - point_temp;
+        y = this->height - 1 - point_temp;
         this->Changed = true;
         DrawAbsolutePixel(x, y, colored);
     }
@@ -303,38 +303,30 @@ void Paint::DrawStringAt(int x, int y, const char *text, sFONT *font, PaintColor
 void Paint::DrawLine(int x0, int y0, int x1, int y1, PaintColor colored)
 {
     this->Changed = true;
-    if (x0 == x1)
-    {
+    /* Bresenham algorithm, beide Endpunkte inklusive, alle Richtungen */
+    int dx = x1 - x0 >= 0 ? x1 - x0 : x0 - x1;
+    int sx = x0 < x1 ? 1 : -1;
+    int dy = y1 - y0 <= 0 ? y1 - y0 : y0 - y1;
+    int sy = y0 < y1 ? 1 : -1;
+    int err = dx + dy;
 
-        DrawVerticalLine(x0, y0, y1 - y0, colored);
-    }
-    else if (y0 == y1)
+    while (true)
     {
-
-        DrawHorizontalLine(x0, y0, x1 - x0, colored);
-    }
-    else
-    {
-        /* Bresenham algorithm */
-        int dx = x1 - x0 >= 0 ? x1 - x0 : x0 - x1;
-        int sx = x0 < x1 ? 1 : -1;
-        int dy = y1 - y0 <= 0 ? y1 - y0 : y0 - y1;
-        int sy = y0 < y1 ? 1 : -1;
-        int err = dx + dy;
-
-        while ((x0 != x1) && (y0 != y1))
+        DrawPixel(x0, y0, colored);
+        if (x0 == x1 && y0 == y1)
         {
-            DrawPixel(x0, y0, colored);
-            if (2 * err >= dy)
-            {
-                err += dy;
-                x0 += sx;
-            }
-            if (2 * err <= dx)
-            {
-                err += dx;
-                y0 += sy;
-            }
+            break;
+        }
+        int e2 = 2 * err;
+        if (e2 >= dy)
+        {
+            err += dy;
+            x0 += sx;
+        }
+        if (e2 <= dx)
+        {
+            err += dx;
+            y0 += sy;
         }
     }
 }

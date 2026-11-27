@@ -49,10 +49,15 @@ int Epd::Init(void)
     IfInit();
 
     /* EPD hardware init start */
+    TimedOut = false;
     Reset();
 
     SendCommand(POWER_ON);
     WaitUntilIdle();
+    if (TimedOut)
+    {
+        return 1;
+    }
 
     SendCommand(PANEL_SETTING);
     SendData(0x0F); // LUT from OTP
@@ -63,9 +68,14 @@ int Epd::Init(void)
 
 
 int Epd::Wakeup(void) {
+    TimedOut = false;
     Reset();
     SendCommand(POWER_ON);
     WaitUntilIdle();
+    if (TimedOut)
+    {
+        return 1;
+    }
 
     SendCommand(PANEL_SETTING);
     SendData(0x0F); // LUT from OTP
@@ -91,13 +101,23 @@ void Epd::SendData(unsigned char data)
 }
 
 /**
- *  @brief: Wait until the busy_pin goes HIGH
+ *  @brief: Wait until the busy_pin goes HIGH, gives up after a timeout
  */
 void Epd::WaitUntilIdle(void)
 {
+    // Ein Refresh dieses 3-Farb-Panels dauert regulaer deutlich unter 60 s
+    const unsigned long timeoutMs = 60000;
+    // Dem Controller Zeit geben, Busy ueberhaupt erst zu setzen
+    DelayMs(100);
+    unsigned long start = millis();
     while (DigitalRead(busy_pin) == 0)
     { // 0: busy, 1: idle
-        DelayMs(100);
+        if (TimedOut || millis() - start > timeoutMs)
+        {
+            TimedOut = true;
+            return;
+        }
+        DelayMs(20);
     }
 }
 

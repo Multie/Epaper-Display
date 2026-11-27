@@ -27,17 +27,30 @@
 
 #include "Wlan.h"
 #include <time.h>
+#include "esp_sntp.h"
 #include <UniversalTime.h>
+
+#define TimeSyncTimeoutMs 3000
 
 void TimeSyncNow()
 {
     if (connectWifi())
     {
-        Debug("Time", "Sync");
         const char *ntpServer = "192.168.0.1";
         const long gmtOffset_sec = 3600;
         const int daylightOffset_sec = 3600;
+        sntp_set_sync_status(SNTP_SYNC_STATUS_RESET);
         configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+        // Antwort abwarten, bevor das WLAN wieder abgeschaltet wird
+        uint32_t start = millis();
+        bool done = false;
+        while (!done && millis() - start < TimeSyncTimeoutMs)
+        {
+            done = sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED;
+            delay(50);
+        }
+        Debug("Time", done ? "Sync" : "SyncFailed");
+        // Auch nach Fehlschlag erst nach dem Intervall erneut versuchen
         time(&Transient.Time.LastSync);
     }
 }
@@ -56,7 +69,7 @@ void TimeSyncUpdate()
 
     time_t now;
     time(&now);
-    if ((now - Transient.Time.LastSync) > Settings.Time.Syncinterval)
+    if (Transient.Time.LastSync == 0 || (now - Transient.Time.LastSync) > Settings.Time.Syncinterval)
     {
         TimeSyncNow();
     }

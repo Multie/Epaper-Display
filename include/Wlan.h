@@ -27,35 +27,71 @@
 
 #include <WiFi.h>
 
+// Zuletzt genutzter Access Point, erspart nach dem Deep Sleep den Kanal-Scan
+RTC_DATA_ATTR uint8_t WifiCachedBssid[6] = {};
+RTC_DATA_ATTR int32_t WifiCachedChannel = 0;
+#define WifiCachedTimeoutMs 3000
+
+bool WifiWaitConnected(uint32_t timeoutMs)
+{
+    uint32_t start = millis();
+    while (millis() - start < timeoutMs)
+    {
+        if (WiFi.status() == WL_CONNECTED)
+        {
+            return true;
+        }
+        delay(100);
+    }
+    return false;
+}
+
 bool connectWifi()
 {
     if (!State.Wifi.Connected)
     {
         DebugProgressStart("Wifi Connect " + String(Settings.Wifi.Ssid));
+        WiFi.persistent(false);
         WiFi.mode(WIFI_STA);
         // Reduce TX power to limit the current spike at radio start (brownout fix)
         WiFi.setTxPower(WIFI_POWER_8_5dBm);
-        String ssid = String(Settings.Wifi.Ssid);
-        String password = String(Settings.Wifi.Password);
 
-        WiFi.begin(ssid.c_str(), password.c_str());
-        int trys = Settings.Wifi.ConnectionTrys;
-
-        for (int a = 0; a < trys; a++)
+        bool connected = false;
+        if (WifiCachedChannel > 0)
         {
-            DebugProgressUpdate();
-            if (WiFi.status() == WL_CONNECTED)
+            WiFi.begin(Settings.Wifi.Ssid, Settings.Wifi.Password, WifiCachedChannel, WifiCachedBssid);
+            connected = WifiWaitConnected(WifiCachedTimeoutMs);
+            if (!connected)
             {
-                State.Wifi.Connected = true;
-                DebugProgressEnd(WiFi.localIP());
-                return true;
+                // Access Point gewechselt: normal suchen
+                WifiCachedChannel = 0;
+                WiFi.disconnect();
+                delay(100);
             }
-            delay(500);
         }
-        DebugProgressEnd("Fail");
-        return false;
+        if (!connected)
+        {
+            WiFi.begin(Settings.Wifi.Ssid, Settings.Wifi.Password);
+            connected = WifiWaitConnected(Settings.Wifi.ConnectionTrys * 500);
+        }
+        if (!connected)
+        {
+            DebugProgressEnd("Fail");
+            return false;
+        }
+        memcpy(WifiCachedBssid, WiFi.BSSID(), sizeof(WifiCachedBssid));
+        WifiCachedChannel = WiFi.channel();
+        State.Wifi.Connected = true;
+        DebugProgressEnd(WiFi.localIP());
     }
     return true;
+}
+
+void disconnectWifi()
+{
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+    State.Wifi.Connected = false;
 }
 
 void WifiSetup()

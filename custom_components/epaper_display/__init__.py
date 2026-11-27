@@ -10,6 +10,7 @@ ist der Zugriffsschutz (lang, zufaellig, siehe config_flow.py).
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from datetime import datetime, timedelta
@@ -50,6 +51,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "firmware_version": None,
         "power_state": None,
         "ota_state": None,
+        "display_state": None,
         "last_seen": None,
         "last_refresh": None,
     }
@@ -111,6 +113,7 @@ async def _handle_status_post(hass: HomeAssistant, entry: ConfigEntry, request: 
     store["firmware_version"] = body.get("firmwareVersion")
     store["power_state"] = body.get("powerState")
     store["ota_state"] = body.get("otaState")
+    store["display_state"] = body.get("displayState")
     store["last_seen"] = dt_util.utcnow()
 
     async_dispatcher_send(hass, f"{SIGNAL_STATUS_UPDATED}_{entry.entry_id}")
@@ -132,20 +135,28 @@ async def _handle_render_get(hass: HomeAssistant, entry: ConfigEntry) -> web.Res
     store["last_refresh"] = last_refresh
     async_dispatcher_send(hass, f"{SIGNAL_STATUS_UPDATED}_{entry.entry_id}")
 
-    dsl = render_dsl(
-        current_condition=current_condition,
-        current_temperature=current_temperature,
-        hourly_forecast=hourly_forecast,
-        daily_forecast=daily_forecast,
-        events_today=events_today,
-        shopping_count=shopping_count,
-        battery_percent=store["battery_percent"],
-        last_refresh=last_refresh,
-    )
+    content = {
+        "current_condition": current_condition,
+        "current_temperature": current_temperature,
+        "hourly_forecast": hourly_forecast,
+        "daily_forecast": daily_forecast,
+        "events_today": events_today,
+        "shopping_count": shopping_count,
+        "battery_percent": store["battery_percent"],
+    }
+    dsl = render_dsl(**content, last_refresh=last_refresh)
+    # Kennung ohne Uhrzeit: bleibt sie gleich, spart sich das Geraet den Refresh
+    stable = render_dsl(**content, last_refresh=datetime(2000, 1, 1))
+    content_id = hashlib.md5(stable.encode("latin-1")).hexdigest()
 
     # Firmware vergleicht Bytes 1:1 (chr(187)/chr(166)) - muss also tatsaechlich
     # Latin-1-codiert als einzelne Bytes rausgehen, nicht UTF-8-Mehrbyte.
-    return web.Response(body=dsl.encode("latin-1"), content_type="text/plain", charset="ISO-8859-1")
+    return web.Response(
+        body=dsl.encode("latin-1"),
+        content_type="text/plain",
+        charset="ISO-8859-1",
+        headers={"X-Epaper-Content": content_id},
+    )
 
 
 async def _handle_firmware_version(hass: HomeAssistant, request: web.Request) -> web.Response:

@@ -45,13 +45,15 @@ typedef struct __attribute__((packed)) TransientData
 RTC_DATA_ATTR TransientData DeepSleepState = {};
 TransientData Transient = {};
 
-unsigned int CalculateStateChecksum(TransientData *state)
+unsigned int CalculateStateChecksum(const TransientData *state)
 {
-    unsigned int sum = 0;
-    state->Checksum = 0;
+    TransientData copy;
+    memcpy(&copy, state, sizeof(copy));
+    copy.Checksum = 0;
 
-    unsigned char *p = (unsigned char *)state;
-    for (int i = 0; i < sizeof(*state); i++)
+    unsigned int sum = 0;
+    const unsigned char *p = (const unsigned char *)&copy;
+    for (size_t i = 0; i < sizeof(copy); i++)
     {
         sum += p[i];
     }
@@ -61,8 +63,7 @@ unsigned int CalculateStateChecksum(TransientData *state)
 
 void ResetTransientData(TransientData *state)
 {
-   TransientData data = {};
-   memcpy((void *)state, (void *)&data, sizeof(data));
+    memset(state, 0, sizeof(*state));
 }
 
 void LoadTransientData(TransientData *state)
@@ -70,19 +71,18 @@ void LoadTransientData(TransientData *state)
     if (CalculateStateChecksum(&DeepSleepState) == DeepSleepState.Checksum)
     {
         // Data is Valid
-        memcpy((void *)state, (void *)&DeepSleepState, sizeof(DeepSleepState));
+        memcpy(state, &DeepSleepState, sizeof(DeepSleepState));
     }
     else
     {
         // Data is Invalid
         ResetTransientData(state);
     }
-   
 }
 
-void SaveTransientData(TransientData *state)
+void SaveTransientData(const TransientData *state)
 {
-    memcpy((void *)&DeepSleepState, (void *)&state, sizeof(DeepSleepState));
+    memcpy(&DeepSleepState, state, sizeof(DeepSleepState));
     DeepSleepState.Checksum = CalculateStateChecksum(&DeepSleepState);
 }
 

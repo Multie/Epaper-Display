@@ -76,8 +76,8 @@ typedef struct DisplayParameterData
     int size; //
     union
     {
-#define DisplayParameterDataLabelLength 60
-#define DisplayParameterDataPointsLength DisplayParameterDataLabelLength / 4
+#define DisplayParameterDataLabelLength 128
+#define DisplayParameterDataPointsLength (DisplayParameterDataLabelLength / 4)
 #define DisplayParameterDataLabel "l"
         char label[DisplayParameterDataLabelLength]; //
 #define DisplayParameterDataName "n"
@@ -281,7 +281,7 @@ void DisplayDrawText(int x, int y, int width, int height, DisplayColor color, in
     }
     else if (align == TextAlign::TopRight || align == TextAlign::CenterRight || align == TextAlign::BottomRight)
     {
-        textX = (int)((float)x + ((float)width) - ((float)textWidth / 2.0));
+        textX = x + width - textWidth;
     }
     // textY
     if (align == TextAlign::TopLeft || align == TextAlign::TopCenter || align == TextAlign::TopRight)
@@ -294,11 +294,11 @@ void DisplayDrawText(int x, int y, int width, int height, DisplayColor color, in
         // DebugValue((((float)height) / 2.0));
         // DebugValue((((float)textHeight) / 2.0));
 
-        textY = (int)(((float)y) + (((float)height) / 2.0) - (((float)font->Baseline) / 2.0));
+        textY = y + (height - textHeight) / 2;
     }
     else if (align == TextAlign::BottomLeft || align == TextAlign::BottomCenter || align == TextAlign::BottomRight)
     {
-        textY = (int)((float)y + ((float)height) - ((float)textHeight / 2.0));
+        textY = y + height - textHeight;
     }
     //
     if (color == DisplayColor::White)
@@ -353,22 +353,18 @@ void DisplayDrawParameter(DisplayParameterData *param)
     }
     else if (strcmp(param->type, "pixel") == 0)
     {
-        Debug("DisplayDraw", String(param->type));
         DisplayDrawPixel(param->x, param->y, param->color);
     }
     else if (strcmp(param->type, "line") == 0)
     {
-        Debug("DisplayDraw", String(param->type));
         DisplayDrawLine(param->x, param->y, param->x2, param->y2, param->color);
     }
     else if (strcmp(param->type, "circle") == 0)
     {
-        Debug("DisplayDraw", String(param->type));
         DisplayDrawCircle(param->x, param->y, param->radius, param->fill, param->color);
     }
     else if (strcmp(param->type, "cicseg") == 0)
     {
-        Debug("DisplayDraw", String(param->type));
         DisplayDrawCircleSegment(
             param->x,      // int x,
             param->y,      // int y,
@@ -382,12 +378,10 @@ void DisplayDrawParameter(DisplayParameterData *param)
     }
     else if (strcmp(param->type, "rect") == 0)
     {
-        Debug("DisplayDraw", String(param->type));
         DisplayDrawRectangle(param->x, param->y, param->width, param->height, param->fill, param->color);
     }
     else if (strcmp(param->type, "poly") == 0)
     {
-        Debug("DisplayDraw", String(param->type));
 
         // param->size kommt vom Netzwerk; points[] fasst nur DisplayParameterDataPointsLength/2
         // Punkte (je x+y), alles darueber waere Stack-/Buffer-Overread.
@@ -404,10 +398,7 @@ void DisplayDrawParameter(DisplayParameterData *param)
         {
             arrX[a] = (int)param->points[a * 2];
             arrY[a] = (int)param->points[a * 2 + 1];
-            Debug("ArrX" + String(a), arrX[a]);
-            Debug("ArrY" + String(a), arrY[a]);
         }
-        Debug("Count", param->size);
         DisplayDrawFilledPolygone(
             arrX,        // int x,
             arrY,        // int y,
@@ -419,12 +410,10 @@ void DisplayDrawParameter(DisplayParameterData *param)
     
     else if (strcmp(param->type, "text") == 0)
     {
-        Debug("DisplayDraw", String(param->type));
         DisplayDrawText(param->x, param->y, param->width, param->height, param->color, param->size, param->align, String(param->label));
     }
     else if (strcmp(param->type, "value") == 0)
     {
-        Debug("DisplayDraw", String(param->type));
         DisplayDrawText(param->x, param->y, param->width, param->height, param->color, param->size, param->align, String(param->name));
     }
     else
@@ -437,10 +426,8 @@ DisplayParameterData DisplayParameterOld = {};
 
 void DisplayParseText(char *text, int length)
 {
-    DebugValue(text);
 
     ;
-    DebugValue(length);
 
     bool key = true;
     char keyText[DisplayParameterDataLabelLength];
@@ -449,7 +436,7 @@ void DisplayParseText(char *text, int length)
     int valueTextIndex = 0;
     char valueText[DisplayParameterDataLabelLength];
 
-    for (int f = 0; f < 60; f++)
+    for (int f = 0; f < DisplayParameterDataLabelLength; f++)
     {
         keyText[f] = 0;
         valueText[f] = 0;
@@ -468,36 +455,14 @@ void DisplayParseText(char *text, int length)
             {
                 key = false;
                 value = true;
-                Debug("Key Done", keyText);
                 if (strcmp(parameter.type, "poly") == 0 && strcmp(keyText, "n") == 0)
                 {
                     justread = parameter.size * 4;
-                    DebugValue(justread);
                 }
             }
             else if (chararacter == '\n')
             {
                 // Line done
-                DebugStruct(parameter);
-                DebugStructValue(parameter.type);
-                DebugStructValue(parameter.x);
-                DebugStructValue(parameter.y);
-                DebugStructValue(parameter.x2);
-                DebugStructValue(parameter.y2);
-                DebugStructValue(parameter.width);
-                DebugStructValue(parameter.height);
-                DebugStructValue(parameter.radius);
-                DebugStructValue(parameter.size);
-                DebugStructValue(parameter.label);
-                for (int f = 0; f < DisplayParameterDataPointsLength; f++)
-                {
-                    DebugStructValue(parameter.points[f]);
-                }
-                DebugStructValue(parameter.name);
-                DebugStructValue(parameter.fill);
-                DebugStructValue(parameter.color);
-                DebugStructValue(parameter.align);
-                DebugStructEnd();
                 DisplayDrawParameter(&parameter);
                 CopyDisplayParameterData(&DisplayParameterOld, &parameter);
                 parameter = {};
@@ -523,7 +488,6 @@ void DisplayParseText(char *text, int length)
             {
                 key = true;
                 value = false;
-                Debug("Value Done", valueText);
                 bool appand = valueText[0] == '+' || valueText[0] == '-';
                 // Hold
                 if (strcmp(keyText, DisplayParameterDataHold) == 0)
@@ -537,8 +501,6 @@ void DisplayParseText(char *text, int length)
                 // Type
                 if (strcmp(keyText, DisplayParameterDataType) == 0)
                 {
-                    Debug("TypeValue", valueText);
-                    Debug("TypeParm", parameter.type);
                     strncpy(parameter.type, valueText, sizeof(parameter.type) - 1);
                     parameter.type[sizeof(parameter.type) - 1] = 0;
                 }
@@ -669,7 +631,6 @@ void DisplayParseText(char *text, int length)
                 {
                     if (strcmp(parameter.type, "poly") == 0)
                     {
-                        Debug("IS", "POLY");
                         for (int f = 0; f < DisplayParameterDataLabelLength; f++)
                         {
                             parameter.label[f] = valueText[f];

@@ -9,13 +9,6 @@
 #include <UniversalTime.h>
 UniversalTime UniversalTime::UniversalTimeNow;
 
-#define TestWebServer
-#ifdef TestWebServer
-#include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h>
-AsyncWebServer server(80);
-#endif
-
 // Includes
 #include "Debug.h"
 
@@ -34,9 +27,6 @@ AsyncWebServer server(80);
 
 #include "sensorBattery.h"
 
-// Wie lange nach dem Aufwachen der lokale Webserver (/api/display/image, fuer
-// manuelles Debugging) erreichbar bleibt, bevor wieder in den Deep Sleep geht.
-#define EpaperActiveWindowSeconds 10
 // Zykluszeit zwischen zwei Display-Refreshes/Update-Checks, auf Akku zugleich
 // das Aufwach-Intervall.
 #define EpaperWakeIntervalSeconds (10 * 60)
@@ -51,7 +41,6 @@ AsyncWebServer server(80);
 #define EpaperBatteryEmptyPercent 5.0
 #define EpaperBatteryEmptySleepSeconds (60 * 60)
 
-int activeSeconds = 0;
 bool batteryEmpty = false;
 // Zeit seit dem letzten Display-Refresh, ueberlebt Deep Sleep
 RTC_DATA_ATTR uint32_t secondsSinceContent = 0;
@@ -61,23 +50,26 @@ void shutdown();
 // Netzwerk-Teil eines Wachzyklus
 void networkCycle(bool contentDue)
 {
-#ifdef TestWebServer
-  connectWifi();
+  if (!connectWifi() || strlen(Settings.Url) == 0)
+  {
+    return;
+  }
+  TimeSyncUpdate();
 
   // Leerer Akku (nur beim Laden moeglich): nur Status melden
   if (contentDue && !batteryEmpty)
   {
     secondsSinceContent = 0;
     OtaCheckAndUpdate(State.Battery.Percent, State.Battery.Voltage);
-    EpaperContentUpdate(State.Battery.Percent, State.Battery.Voltage);
+    EpaperReportStatus(State.Battery.Percent, State.Battery.Voltage);
+    // Schaltet das WLAN vor dem Zeichnen selbst ab
+    EpaperFetchAndDrawContent();
   }
-  else if (WiFi.status() == WL_CONNECTED && strlen(Settings.Url) > 0)
+  else
   {
     EpaperReportStatus(State.Battery.Percent, State.Battery.Voltage);
   }
-
-  server.begin();
-#endif
+  disconnectWifi();
 }
 
 void startup()
@@ -101,7 +93,6 @@ void startup()
     return;
   }
 
-  TimeSyncStartup();
   DisplayStartup();
 
   networkCycle(true);
@@ -129,22 +120,6 @@ void wakeup()
   DisplayWakeup();
 
   networkCycle(secondsSinceContent >= EpaperWakeIntervalSeconds);
-}
-
-void update()
-{
-  PowerUpdate();
-  TransientUpdate();
-  // Input
-  SensorBatteryUpdate();
-
-  TimeSyncUpdate();
-  // Output
-  DisplayUpdate();
-
- // Debug("Now", UniversalTime::Now().toISO8601());
-  loopDebug();
-  delay(1000);
 }
 
 void shutdown()
@@ -175,6 +150,7 @@ void shutdown()
     sleepSeconds = batteryEmpty ? EpaperBatteryEmptySleepSeconds : EpaperWakeIntervalSeconds;
   }
   secondsSinceContent += awakeSeconds + sleepSeconds;
+  EpaperSecondsSinceDraw += awakeSeconds + sleepSeconds;
   Debug("Power", String(PowerStateName()) + " " + String(State.Battery.Voltage, 3) + "V Sleep " + String((uint32_t)sleepSeconds));
   StartDeepSleep(sleepSeconds * 1000000ull);
 }
@@ -182,7 +158,7 @@ void shutdown()
 void setup()
 {
   setupPins();
-  Serial.begin(112500);
+  Serial.begin(115200);
   esp_sleep_wakeup_cause_t wakeup_reason;
   wakeup_reason = esp_sleep_get_wakeup_cause();
   if (wakeup_reason == ESP_SLEEP_WAKEUP_UNDEFINED)
@@ -198,14 +174,10 @@ void setup()
     wakeup();
   }
   loopDebug();
+  shutdown();
 }
 
+// Alles passiert einmalig in setup(), danach Deep Sleep
 void loop()
 {
-  update();
-  activeSeconds++;
-  if (activeSeconds >= EpaperActiveWindowSeconds)
-  {
-    shutdown();
-  }
 }

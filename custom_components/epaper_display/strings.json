@@ -8,7 +8,18 @@
           "calendar_entities": "Kalender (Termine heute)",
           "shopping_todo_entity": "Einkaufsliste (Todo-Entity)"
         }
+      },
+      "reconfigure": {
+        "title": "Epaper Display aendern",
+        "data": {
+          "weather_entity": "Wetter-Entity",
+          "calendar_entities": "Kalender (Termine heute)",
+          "shopping_todo_entity": "Einkaufsliste (Todo-Entity)"
+        }
       }
+    },
+    "abort": {
+      "reconfigure_successful": "Einstellungen gespeichert."
     }
   }
 }

@@ -44,6 +44,7 @@ void EpaperReportStatus(float batteryPercent, float batteryVoltage)
     status["firmwareVersion"] = FirmwareVersionCode;
     status["powerState"] = PowerStateName();
     status["otaState"] = OtaState;
+    status["displayState"] = DisplayTimeout ? "timeout" : "ok";
 
     String body;
     serializeJson(status, body);
@@ -56,10 +57,21 @@ void EpaperReportStatus(float batteryPercent, float batteryVoltage)
     http.end();
 }
 
+// Spaetestens nach dieser Zeit neu zeichnen, auch ohne Aenderung
+#define EpaperForceRefreshSeconds (24 * 60 * 60)
+// Kennung des Inhalts ohne Uhrzeit, von der HA-Integration geliefert
+#define EpaperContentHeader "X-Epaper-Content"
+
+RTC_DATA_ATTR char EpaperShownContent[40] = "";
+// Wird in main.cpp beim Schlafengehen hochgezaehlt
+RTC_DATA_ATTR uint32_t EpaperSecondsSinceDraw = 0;
+
 void EpaperFetchAndDrawContent()
 {
     HTTPClient http;
     http.begin(Settings.Url);
+    const char *headers[] = {EpaperContentHeader};
+    http.collectHeaders(headers, 1);
     int code = http.GET();
     if (code != HTTP_CODE_OK)
     {
@@ -75,25 +87,41 @@ void EpaperFetchAndDrawContent()
         return;
     }
 
+    String contentId = http.header(EpaperContentHeader);
+    if (contentId.length() > 0 && contentId == EpaperShownContent &&
+        EpaperSecondsSinceDraw < EpaperForceRefreshSeconds)
+    {
+        Debug("EpaperContent", "Unchanged");
+        http.end();
+        return;
+    }
+
     String dsl = http.getString();
     http.end();
+    if ((int)dsl.length() != contentLength)
+    {
+        // Abgebrochener Download: altes Bild behalten
+        Debug("EpaperContent", "RenderIncomplete");
+        return;
+    }
+
+    // Ab hier wird kein Netz mehr gebraucht, der Refresh dauert lange
+    disconnectWifi();
 
     DisplayPaintBlack.Clear(UNCOLORED);
     DisplayPaintRed.Clear(UNCOLORED);
     // HA liefert die DSL Latin-1-kodiert (ein Byte pro Zeichen, siehe
     // render.py) - dsl.c_str() reicht die Rohbytes 1:1 durch, kein Decoding.
     DisplayParseText((char *)dsl.c_str(), dsl.length());
-    DisplayDraw();
-}
-
-void EpaperContentUpdate(float batteryPercent, float batteryVoltage)
-{
-    if (WiFi.status() != WL_CONNECTED || strlen(Settings.Url) == 0)
+    if (DisplayDraw())
     {
-        return;
+        strlcpy(EpaperShownContent, contentId.c_str(), sizeof(EpaperShownContent));
+        EpaperSecondsSinceDraw = 0;
     }
-    EpaperReportStatus(batteryPercent, batteryVoltage);
-    EpaperFetchAndDrawContent();
+    else
+    {
+        EpaperShownContent[0] = 0;
+    }
 }
 
 #endif

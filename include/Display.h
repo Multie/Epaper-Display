@@ -56,196 +56,55 @@ enum DisplayColor
 
 #include "Display/DisplayDrawModules.h"
 
-void DisplayDraw()
+// Letzter Refresh am Timeout gescheitert? Wird mit dem naechsten Status gemeldet
+RTC_DATA_ATTR bool DisplayTimeout = false;
+
+// false = Panel hat nicht (rechtzeitig) geantwortet
+bool DisplayDraw()
 {
     if (!DisplayPaintBlack.hasChanged() && !DisplayPaintRed.hasChanged())
     {
-        return;
+        return true;
     }
 
+    int initResult;
     if (State.Display.Sleep)
     {
         Debug("Display", "Reset");
-        epd.Wakeup();
+        initResult = epd.Wakeup();
     }
     else
     {
         Debug("Display", "Init");
-        if (epd.Init() != 0)
-        {
-            return;
-        }
+        initResult = epd.Init();
+    }
+    if (initResult != 0)
+    {
+        DisplayTimeout = true;
+        Debug("Display", "Timeout");
+        return false;
     }
 
+    // Uebertraegt beide Puffer und loest genau einen Refresh aus
     epd.DisplayFrame(DisplayPaintBlack.GetImage(), DisplayPaintRed.GetImage());
+    DisplayTimeout = epd.TimedOut;
+    Debug("Display", DisplayTimeout ? "Timeout" : "Frame");
     DisplayPaintBlack.resetChanged();
     DisplayPaintRed.resetChanged();
-    Debug("Display", "Frame");
-    epd.DisplayFrame();
-    Debug("Display", "Sleep");
     epd.Sleep();
+    Debug("Display", "Sleep");
     State.Display.Sleep = true;
+    return !DisplayTimeout;
 }
-
-void PaintTest()
-{
-    if (!State.Display.painted)
-    {
-        State.Display.painted = true;
-
-        DisplayPaintBlack.Clear(UNCOLORED);
-        DisplayPaintRed.Clear(UNCOLORED);
-
-        DisplayPaintBlack.DrawStringAt(0, 0, "e-Paper Demo", &Font24, COLORED);
-        DisplayPaintRed.DrawStringAt(0, 150 - 12, "e-Paper Demo", &Font24, COLORED);
-
-        DisplayDraw();
-    }
-}
-
-#ifdef TestWebServer
-uint16_t indexvReal = 0;
-char* postData;
-int postDataSize =0;
-bool DisplayServerGodData = false;
-void DisplaySetupServer()
-{
-    server.on(
-        "/api/display/image",
-        HTTP_GET,
-        [](AsyncWebServerRequest *request)
-        {
-            indexvReal = 0;
-            AsyncWebServerResponse *response = request->beginChunkedResponse(
-                "text/plain",
-                [](uint8_t *buffer, size_t maxLen, size_t index)
-                {
-                    maxLen = maxLen >> 1;
-                    size_t len = 0;
-                    int len1 = DisplayPaintBlack.GetWidth() * DisplayPaintBlack.GetHeight() / 8;
-                    int len2 = len1 * 2;
-
-                    while (len < (maxLen - 20) && indexvReal < (len2))
-                    {
-                        if (indexvReal < len1)
-                        {
-                            len += sprintf(((char *)buffer + len), "%c", DisplayImageBlack[indexvReal]);
-                        }
-                        else
-                        {
-                            len += sprintf(((char *)buffer + len), "%c", DisplayImageRed[indexvReal - len1]);
-                        }
-                        indexvReal++;
-                    }
-                    return len;
-                });
-            response->addHeader("Access-Control-Allow-Origin", "*");
-            response->addHeader("Access-Control-Allow-Methods", "GET, POST");
-            response->addHeader("Access-Control-Allow-Headers", "Content-Type");
-            request->send(response);
-        });
-    server.on(
-        "/api/display/image",
-        HTTP_POST,
-        [](AsyncWebServerRequest *request)
-        {
-            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "123");
-            response->addHeader("Access-Control-Allow-Origin", "*");
-            response->addHeader("Access-Control-Allow-Methods", "GET, POST");
-            response->addHeader("Access-Control-Allow-Headers", "Content-Type");
-            request->send(response);
-        },
-        NULL,
-        [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
-        {
-            Debug("HttpLen", len);
-            // Draw-Skript ist Text, kein Framebuffer-Dump: alles ueber dieser Groesse ist
-            // garantiert Unsinn/Angriff und wuerde sonst ungebremst Heap allokieren.
-            const size_t MaxUploadSize = 32768;
-            if (total == 0 || total > MaxUploadSize || index + len > total)
-            {
-                Debug("Ota", "DisplayUploadRejected");
-                request->send(400, "text/plain", "Payload invalid or too large");
-                return;
-            }
-            if (index == 0)
-            {
-                if (postData != nullptr)
-                {
-                    free(postData);
-                    postData = nullptr;
-                }
-                postData = (char *)malloc(total);
-                postDataSize = (postData != nullptr) ? total : 0;
-            }
-            if (postData == nullptr)
-            {
-                request->send(500, "text/plain", "Out of memory");
-                return;
-            }
-            memcpy(postData + index, data, len);
-            if (index + len == total)
-            {
-                AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "");
-                response->addHeader("Access-Control-Allow-Origin", "*");
-                response->addHeader("Access-Control-Allow-Methods", "GET, POST");
-                response->addHeader("Access-Control-Allow-Headers", "Content-Type");
-                request->send(response);
-                DisplayServerGodData = true;
-            }
-        });
-}
-#endif
 
 void DisplayStartup()
 {
     State.Display.Sleep = false;
-#ifdef TestWebServer
-    DisplaySetupServer();
-#endif
-    // DisplayParseText("t»rect¦x»10¦y»10¦w»20¦h»20¦f»1¦c»b¦\nt»rect¦x»30¦y»10¦w»20¦h»20¦f»1¦c»r¦");
-    //  DisplayParseText("t»pixel¦x»0¦y»0¦c»b¦\nt»circle¦x»0¦y»0¦r»0¦c»b¦\nt»line¦x1»0¦y1»0¦x2»0¦y2»0¦c»b¦\nt»rect¦x»0¦y»0¦w»0¦h»0¦c»b¦\nt»text¦x»0¦y»0¦w»0¦h»0¦c»b¦s»16¦a»cc¦l»¦\nt»value¦x»0¦y»0¦w»0¦h»0¦c»b¦s»16¦a»cc¦v»¦\nt»image¦x»0¦y»0¦w»0¦h»0¦c»b¦n»¦");
-
-    // DisplayPaintRed.DrawCircleSegment(100,100,25,0,180,PaintColor::COLORED);
-   
-    DisplayPaintBlack.Clear(PaintColor::UNCOLORED);
-    int x[] = {50, 100, 20};
-    int y[] = {10, 50, 50};
-    DisplayPaintBlack.DrawFilledPolygone(x, y, 3, PaintColor::COLORED);
 }
 
 void DisplayWakeup()
 {
     State.Display.Sleep = false;
-#ifdef TestWebServer
-    DisplaySetupServer();
-#endif
-}
-
-void DisplayUpdate()
-{
-    // PaintTest();
-    // Debug("Update", "Display");
-#ifdef TestWebServer
-    if (DisplayServerGodData && postDataSize > 0)
-    {
-        DisplayServerGodData = false;
-        DisplayPaintBlack.Clear(UNCOLORED);
-        DisplayPaintRed.Clear(UNCOLORED);
-        DisplayParseText(postData,postDataSize);
-
-        postDataSize = 0;
-        free(postData);
-        postData = nullptr;
-    }
-
-    /*ClearDisplay = false;
-     DisplayPaintBlack.Clear(UNCOLORED);
-    DisplayPaintRed.Clear(UNCOLORED);
-    postData = "";
-    */
-
-#endif
 }
 
 void DisplayShutdown()

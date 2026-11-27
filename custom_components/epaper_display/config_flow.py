@@ -53,3 +53,17 @@ class EpaperDisplayConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_create_entry(title="Epaper Display", data=data)
 
         return self.async_show_form(step_id="user", data_schema=_schema(), errors=errors)
+
+    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
+        """Auswahl nachtraeglich aendern. Die webhook_id bleibt erhalten, am
+        Geraet muss nichts neu eingestellt werden."""
+        entry = self._get_reconfigure_entry()
+
+        if user_input is not None:
+            # data_updates ergaenzt die vorhandenen Daten, webhook_id bleibt
+            return self.async_update_reload_and_abort(entry, data_updates=user_input)
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(_schema(), entry.data),
+        )
