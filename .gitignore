@@ -10,3 +10,7 @@ node_modules
 
 __pycache__/
 *.pyc
+
+# Lokale Secrets - nie ins Repo (siehe release.sh)
+include/Secrets.h
+.release-secrets

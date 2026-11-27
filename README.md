@@ -46,6 +46,13 @@ ein normales HACS-Integrations-Update.
 Kein automatisches Rollback: schlägt ein Release fehl, hilft nur ein
 USB-Reflash.
 
+Vor dem ersten Release lokal eine Datei `.release-secrets` anlegen (steht in
+`.gitignore`): WLAN-Passwort und `webhook_id`, je eine Zeile. Das Skript bricht
+ab, wenn einer dieser Werte in den Repo-Dateien oder in der gebauten Firmware
+vorkommt, oder wenn es nichts zu pruefen gibt. Unter Windows in Git Bash
+ausfuehren; ist der Projektpfad sehr lang, vorher `PLATFORMIO_WORKSPACE_DIR`
+auf ein kurzes Verzeichnis setzen.
+
 ## Battery-Empty-Modus
 
 Unter 5 % Akku (`EpaperBatteryEmptyPercent` in `src/main.cpp`) überspringt
