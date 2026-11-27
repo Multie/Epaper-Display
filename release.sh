@@ -121,6 +121,11 @@ BUILT_BIN="${PLATFORMIO_WORKSPACE_DIR:-.pio}/build/${ENV_NAME}/firmware.bin"
 echo "==> Secret-Scan: gebaute Firmware"
 printf '%s\0' "$BUILT_BIN" | scan_files || fail "Secrets in der Firmware - nicht veroeffentlicht."
 
+echo "==> Pruefung auf lokale Benutzerpfade in der Firmware"
+# /home/runner stammt aus Espressifs vorgebauten Bibliotheken (oeffentlicher Build-Server)
+LOCAL_PATHS=$(grep -a -o -i -E '[\/](users|home)[\/][A-Za-z0-9._-]+' "$BUILT_BIN" | grep -v -i -x '/home/runner' || true)
+[ -z "$LOCAL_PATHS" ] || fail "Firmware enthaelt lokale Dateipfade mit Benutzername - nicht veroeffentlicht."
+
 echo "==> MD5 berechnen"
 MD5=$(md5sum < "$BUILT_BIN" | awk '{print $1}')
 
