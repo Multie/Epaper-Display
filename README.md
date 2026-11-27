@@ -58,7 +58,7 @@ auf ein kurzes Verzeichnis setzen.
 Unter 5 % Akku (`EpaperBatteryEmptyPercent` in `src/main.cpp`) überspringt
 das Gerät WLAN, Display-Update und OTA-Check komplett und geht sofort
 wieder in den Deep Sleep - mit einem auf 1 Stunde verlängerten Zyklus
-(`EpaperBatteryEmptySleepSeconds`) statt der üblichen 10 Minuten, um die
+(`EpaperBatteryEmptySleepSeconds`), um die
 Restladung zu strecken. Sobald der Akku wieder über der Schwelle liegt,
 läuft der normale Betrieb automatisch weiter.
 
@@ -82,8 +82,8 @@ stateDiagram-v2
 |---|---|---|---|
 | `charging` | Spannung steigt | ca. jede Minute | alle 10 min (nicht unter 5 %) |
 | `full` | ab 99 % und 4,15 V, nicht fallend | ca. jede Minute | alle 10 min |
-| `discharging` | Spannung faellt | alle 10 min | alle 10 min |
-| `unknown` | seit Neustart keine klare Aenderung | einmal nach 1 min, dann alle 10 min | alle 10 min |
+| `discharging` | Spannung faellt | stuendlich | stuendlich |
+| `unknown` | seit Neustart keine klare Aenderung | einmal nach 1 min, dann stuendlich | stuendlich |
 | Akku leer | unter 5 %, nicht ladend | keine, Aufwachen stuendlich | keine |
 
 Der Zustand wird allein aus der Akkuspannung abgeleitet (`include/PowerSource.h`):
@@ -112,7 +112,7 @@ stateDiagram-v2
 
 ## Display-Refresh
 
-Alle 10 Minuten wird der Inhalt abgeholt, gezeichnet wird nur, wenn er sich
+Beim Laden alle 10 Minuten, auf Akku stuendlich wird der Inhalt abgeholt, gezeichnet wird nur, wenn er sich
 geaendert hat (Header `X-Epaper-Content`, ohne Uhrzeit), nach einem Neustart
 oder spaetestens nach 24 Stunden. "Stand:" zeigt also die letzte Aenderung.
 Vor dem Refresh wird das WLAN abgeschaltet. Antwortet das Panel 60 s lang

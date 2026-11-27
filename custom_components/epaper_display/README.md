@@ -39,7 +39,7 @@ normales HACS-Integrations-Update an.
 Einstellungen -> Geräte & Dienste -> Epaper Display -> Menü (drei Punkte) ->
 "Neu konfigurieren": Wetter-Entity, Kalender und Einkaufsliste ändern. Die
 Webhook-URL bleibt gleich. Das Display zeigt die Änderung beim nächsten
-Inhaltsabruf (bis zu 10 Minuten, oder Reset-Taste).
+Inhaltsabruf (beim Laden bis zu 10 Minuten, auf Akku bis zu 1 Stunde, oder Reset-Taste).
 
 ## Was die Integration macht
 

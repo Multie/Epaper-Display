@@ -27,9 +27,10 @@ UniversalTime UniversalTime::UniversalTimeNow;
 
 #include "sensorBattery.h"
 
-// Zykluszeit zwischen zwei Display-Refreshes/Update-Checks, auf Akku zugleich
-// das Aufwach-Intervall.
-#define EpaperWakeIntervalSeconds (10 * 60)
+// Beim Laden: fruehestens alle 10 Minuten Inhalt abholen und auf Updates pruefen
+#define EpaperContentIntervalSeconds (10 * 60)
+// Auf Akku: Aufwach-Intervall, bei jedem Aufwachen auch Inhalt und Update-Check
+#define EpaperBatteryIntervalSeconds (60 * 60)
 // Am Strom: Status (Akkuspannung usw.) einmal pro Minute melden
 #define EpaperPoweredIntervalSeconds 60
 #define EpaperMinSleepSeconds 10
@@ -119,7 +120,7 @@ void wakeup()
 
   DisplayWakeup();
 
-  networkCycle(secondsSinceContent >= EpaperWakeIntervalSeconds);
+  networkCycle(secondsSinceContent >= EpaperContentIntervalSeconds);
 }
 
 void shutdown()
@@ -147,7 +148,7 @@ void shutdown()
   }
   else
   {
-    sleepSeconds = batteryEmpty ? EpaperBatteryEmptySleepSeconds : EpaperWakeIntervalSeconds;
+    sleepSeconds = batteryEmpty ? EpaperBatteryEmptySleepSeconds : EpaperBatteryIntervalSeconds;
   }
   secondsSinceContent += awakeSeconds + sleepSeconds;
   EpaperSecondsSinceDraw += awakeSeconds + sleepSeconds;
