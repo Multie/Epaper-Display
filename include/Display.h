@@ -37,13 +37,13 @@ unsigned char DisplayImageRed[(EPD_WIDTH * EPD_HEIGHT / 8)] = {};
 Paint DisplayPaintBlack(DisplayImageBlack, epd.width, epd.height);
 Paint DisplayPaintRed(DisplayImageRed, epd.width, epd.height);
 
-// Panel sitzt um 180 Grad gedreht im Gehaeuse
+// Ausrichtung passend zum Einbau im Gehaeuse
 struct DisplayRotationInit
 {
     DisplayRotationInit()
     {
-        DisplayPaintBlack.SetRotate(ROTATE_180);
-        DisplayPaintRed.SetRotate(ROTATE_180);
+        DisplayPaintBlack.SetRotate(ROTATE_0);
+        DisplayPaintRed.SetRotate(ROTATE_0);
     }
 } DisplayRotationInitInstance;
 
