@@ -27,7 +27,7 @@
 #include "Settings.h"
 
 // Bei jedem Firmware-Release vom release.sh-Skript automatisch erhoeht
-#define FirmwareVersionCode 4
+#define FirmwareVersionCode 5
 
 // Manifest wird vom selben HA-Webhook geliefert wie der Display-Inhalt, nur
 // mit Query-Param - die URL kommt aus dem NVS (Settings.Url, per serieller
